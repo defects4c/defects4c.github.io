@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Tracewise(EMNLP25) Sandbox - Defect Analysis</title>
+
+   <!-- libs -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs/loader.js"></script>
+
+   <link rel="stylesheet" href="python_sandbox.css">
+
+   <style>
+   /* Additional styles for defect info panel */
+   .defect-info-panel {
+       background: #0d1117;
+       border-right: 1px solid #30363d;
+       display: flex;
+       flex-direction: column;
+       min-width: 350px;
+       width: 25%;
+   }
+   
+   .defect-content {
+       flex: 1;
+       overflow-y: auto;
+       padding: 16px;
+   }
+   
+   .defect-section {
+       margin-bottom: 20px;
+   }
+   
+   .defect-section h3 {
+       color: #58a6ff;
+       font-size: 14px;
+       font-weight: 600;
+       margin-bottom: 8px;
+       padding-bottom: 6px;
+       border-bottom: 1px solid #30363d;
+   }
+   
+   .defect-field {
+       margin-bottom: 12px;
+   }
+   
+   .defect-label {
+       color: #8b949e;
+       font-size: 12px;
+       font-weight: 500;
+       margin-bottom: 4px;
+   }
+   
+   .defect-value {
+       color: #f0f6fc;
+       font-size: 13px;
+       padding: 6px 10px;
+       background: #161b22;
+       border-radius: 6px;
+       border: 1px solid #30363d;
+   }
+   
+   .defect-value.code {
+       font-family: "Monaco", "Menlo", monospace;
+       font-size: 12px;
+   }
+   
+   .file-list {
+       list-style: none;
+       margin: 0;
+       padding: 0;
+   }
+   
+   .file-list li {
+       padding: 4px 8px;
+       background: #161b22;
+       border: 1px solid #30363d;
+       border-radius: 4px;
+       margin-bottom: 4px;
+       font-size: 12px;
+       font-family: "Monaco", "Menlo", monospace;
+       color: #58a6ff;
+   }
+   
+   .status-badge {
+       display: inline-block;
+       padding: 4px 8px;
+       border-radius: 4px;
+       font-size: 11px;
+       font-weight: 600;
+       text-transform: uppercase;
+   }
+   
+   .status-badge.success {
+       background: #238636;
+       color: #fff;
+   }
+   
+   .status-badge.error {
+       background: #da3633;
+       color: #fff;
+   }
+   
+   .defect-actions {
+       padding: 16px;
+       border-top: 1px solid #30363d;
+   }
+   
+   .load-defect-btn {
+       width: 100%;
+       margin-bottom: 8px;
+   }
+   
+   .defect-id-input {
+       width: 100%;
+       background: #21262d;
+       border: 1px solid #30363d;
+       border-radius: 6px;
+       padding: 8px 12px;
+       color: #f0f6fc;
+       font-size: 13px;
+       margin-bottom: 8px;
+   }
+   
+   .location-info {
+       display: grid;
+       grid-template-columns: 1fr 1fr;
+       gap: 8px;
+   }
+   
+   .location-item {
+       padding: 6px 8px;
+       background: #161b22;
+       border: 1px solid #30363d;
+       border-radius: 4px;
+       font-size: 12px;
+   }
+   
+   .location-item span {
+       color: #8b949e;
+       display: block;
+       font-size: 11px;
+       margin-bottom: 2px;
+   }
+   
+   .location-item strong {
+       color: #f0f6fc;
+   }
+   
+   /* Adjust main content to accommodate defect panel */
+   .main-content {
+       display: flex;
+       flex: 1;
+       min-height: 0;
+   }
+   
+   .center-section {
+       display: flex;
+       flex: 1;
+       min-width: 0;
+   }
+   </style>
+
+</head>
+<body>
+<div class="container" id="mainContainer">
+
+   <!-- =============== HEADER ================= -->
+   <header class="header">
+       <div class="title">🐍 Python Sandbox - Defect Analysis</div>
+       <div class="api-config">
+           <label>API URL: http://146.190.90.3:9651</label>
+           <input type="text" class="api-url-input" id="apiUrl" value="https://defects4c.wj2ai.com/" placeholder="http://146.190.90.3:9651" hidden>
+       </div>
+       <div class="controls">
+           <select class="model-select" id="modelSelect">
+               <option value="qwen3-14b">Qwen2.5-Code-7B-Inst.</option>
+               <option value="gpt-4" disabled>GPT-4</option>
+               <option value="claude-3.5" disabled>Claude 3.5 Sonnet</option>
+               <option value="gemini-pro" disabled>Gemini Pro</option>
+               <option value="fallback" disabled>Fallback Mode</option>
+           </select>
+           <button class="btn btn-reset" id="resetBtn">🔄 Reset</button>
+       </div>
+   </header>
+
+   <!-- =============== MAIN CONTENT WITH RESIZABLE PANELS =============== -->
+   <div class="main-content">
+       <!-- Left Panel: Defect Information -->
+       <div class="defect-info-panel" id="defectInfoPanel">
+           <div class="panel-header">Defect Information</div>
+           
+	<div class="defect-content" id="defectContent">
+               <div class="defect-field">
+                   <div class="defect-label">Defect ID</div>
+                   <div class="defect-value" id="defectId">-</div>
+               </div>
+               
+               <div class="defect-field">
+                   <div class="defect-label">SHA ID</div>
+                   <div class="defect-value code" id="shaId">-</div>
+               </div>
+               
+               <div class="defect-field">
+                   <div class="defect-label">Status</div>
+                   <div id="defectStatus">
+                       <span class="status-badge" id="defectStatusBadge">-</span>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Commit Information</h3>
+                   <div class="defect-field">
+                       <div class="defect-label">Commit Before</div>
+                       <div class="defect-value code" id="commitBefore">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Commit After</div>
+                       <div class="defect-value code" id="commitAfter">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Commit Date</div>
+                       <div class="defect-value" id="commitDate">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">GitHub URL</div>
+                       <div class="defect-value">
+                           <a href="#" id="githubUrl" target="_blank" style="color: #58a6ff;">-</a>
+                       </div>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Files</h3>
+                   <div class="defect-field">
+                       <div class="defect-label">Source Files</div>
+                       <ul class="file-list" id="srcFiles">
+                           <li>No files loaded</li>
+                       </ul>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Test Files</div>
+                       <ul class="file-list" id="testFiles">
+                           <li>No files loaded</li>
+                       </ul>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Location Information</h3>
+                   <div class="location-info" id="locationInfo">
+                       <div class="location-item">
+                           <span>Hunk Start</span>
+                           <strong id="hunkStart">-</strong>
+                       </div>
+                       <div class="location-item">
+                           <span>Hunk End</span>
+                           <strong id="hunkEnd">-</strong>
+                       </div>
+                       <div class="location-item">
+                           <span>Function Start</span>
+                           <strong id="funcStart">-</strong>
+                       </div>
+                       <div class="location-item">
+                           <span>Function End</span>
+                           <strong id="funcEnd">-</strong>
+                       </div>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Bug Information</h3>
+                   <div class="defect-field">
+                       <div class="defect-label">Bug Type</div>
+                       <div class="defect-value" id="bugTypeName">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Type ID</div>
+                       <div class="defect-value" id="bugTypeId">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Category</div>
+                       <div class="defect-value" id="bugTypeCategory">-</div>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Prompt Context</h3>
+                   <div class="defect-field">
+                       <div class="defect-label">Temperature</div>
+                       <div class="defect-value" id="promptTemperature">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Buggy Code</div>
+                       <div class="defect-value code" id="buggyCode" style="max-height: 150px; overflow-y: auto; white-space: pre-wrap;">-</div>
+                   </div>
+               </div>
+               
+               <div class="defect-section">
+                   <h3>Unit Test</h3>
+                   <div class="defect-field">
+                       <div class="defect-label">Test Names</div>
+                       <ul class="file-list" id="testNames">
+                           <li>No test names</li>
+                       </ul>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Status</div>
+                       <div class="defect-value" id="unitTestStatus">-</div>
+                   </div>
+                   <div class="defect-field">
+                       <div class="defect-label">Build Flags</div>
+                       <ul class="file-list" id="buildFlags">
+                           <li>No build flags</li>
+                       </ul>
+                   </div>
+               </div>
+           </div>           
+
+           <div class="defect-actions">
+               <input type="text" class="defect-id-input" id="defectIdInput" placeholder="Enter defect ID (e.g., CVE-2020-13775)">
+               <button class="btn btn-primary load-defect-btn" id="loadDefectBtn">📥 Load Defect</button>
+               <button class="btn btn-primary" id="executeDebugBtn">🚀 Execute & Debug</button>
+           </div>
+       </div>
+
+       <!-- Center Section -->
+       <div class="center-section">
+           <!-- Debug Iterations Panel -->
+           <div class="left-panel">
+               <aside class="iterations-panel" id="iterationsPanel">
+                   <div class="panel-header">Debug Iterations</div>
+                   <div class="iterations-list" id="iterationsList">
+                       <div class="no-iterations">No debug iterations yet.<br><br>Click "Execute & Debug" to start.</div>
+                   </div>
+               </aside>
+           </div>
+
+           <!-- Right Panel: Code Editor + Diff + Console -->
+           <div class="right-panel">
+               <!-- Top Section: Code Editor + Diff Viewer -->
+               <div class="right-top" id="rightTop">
+                   <!-- Code Editor -->
+                   <div class="code-panel" id="codePanel">
+                       <div class="panel-header">Code Editor</div>
+                       <div class="editor-container"><div id="editor"></div></div>
+                   </div>
+                   
+                   <!-- Right section for diff and execution (vertical split) -->
+                   <div class="diff-execution-container" id="diffExecutionContainer">
+                       <!-- Code Diff Viewer (top) -->
+                       <div class="diff-panel" id="diffPanel">
+                           <div class="panel-header">Code Diff Viewer (Inline)</div>
+                           <div class="diff-container" id="diffContainer"><div class="no-diff">No changes yet.</div></div>
+                       </div>
+                       
+                       <!-- Execution Output (bottom) -->
+                       <div class="execution-panel" id="executionPanel">
+                           <div class="panel-header">Execution Output</div>
+                           <div class="execution-output" id="executionOutput"><div class="no-output">No execution results yet.</div></div>
+                       </div>
+                   </div>
+               </div>
+
+               <!-- Bottom Section: Console -->
+               <div class="bottom-panel">
+                   <section class="console-container" id="consolePanel">
+                       <div class="panel-header">Console Output</div>
+                       <div class="console-output-wrapper"><div class="console-output" id="consoleOutput">Ready…</div></div>
+                       <div class="status-bar">
+                           <div class="status-indicator"><div class="status-dot" id="statusDot"></div><span id="statusText">Ready</span></div>
+                           <div id="debugInfo">Model: <span id="currentModel">Qwen3-14B</span> | Iterations: <span id="iterationCount">0</span></div>
+                       </div>
+                   </section>
+               </div>
+           </div>
+       </div>
+   </div>
+</div>
+
+
+
+<script>
+
+let diffEditor, editor;
+let currentProblemId = null; // Add global variable to store current problem ID
+
+let currentBugId = null; // Store current bug_id
+let currentHandle = null; // Store current task handle
+
+
+/* ------------ MONACO LOAD -------------- */
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
+require(['vs/editor/editor.main'], () => {
+   // Create main code editor
+   editor = monaco.editor.create(document.getElementById('editor'), {
+       value: `# Loading initial problem...\n# Please wait while we fetch your first coding challenge`,
+       language: 'cpp', 
+       theme: 'vs-dark', 
+       automaticLayout: true,
+       fontSize: 14, 
+       minimap: { enabled: false }, 
+       wordWrap: 'on'
+   });
+
+   // Get the diff container element
+   const diffContainer = document.getElementById('diffContainer');
+   
+   // Create diff editor with inline view (uni-diff style)
+   diffEditor = monaco.editor.createDiffEditor(diffContainer, {
+       theme: 'vs-dark', 
+       automaticLayout: true, 
+       fontSize: 12, 
+       renderSideBySide: false, // Inline diff view
+       readOnly: true,
+       enableSplitViewResizing: false,
+       renderLineHighlight: 'none',
+       minimap: {
+           enabled: true
+       },
+       scrollBeyondLastLine: false,
+       wordWrap: 'on',
+       diffCodeLens: true,
+       ignoreTrimWhitespace: false,
+       renderOverviewRuler: true
+   });
+
+   // Add resize observer for diff editor
+   const resizeObserver = new ResizeObserver(() => {
+       diffEditor.layout();
+       editor.layout();
+   });
+   resizeObserver.observe(diffContainer);
+
+   initializeApp();
+});
+
+/* ------------ APP CORE -------------- */
+function initializeApp() {
+   let originalCode = '', currentCode = '', isDebugging = false;
+   let debugIterations = 0, iterations = [], selectedIteration = null;
+   const maxDebugIterations = 4; // Budget limit for debugging attempts
+   let debugBudgetRemaining = maxDebugIterations;
+   const defaultCode = `// Defects4C - C/C++ Code Repair Challenge\nconsole.log("Ready to start fixing defects!");`;
+
+   /* ======= Helper Functions ======= */
+   const updateStatus = (cls, msg) => { 
+       document.getElementById('statusDot').className = 'status-dot ' + cls; 
+       document.getElementById('statusText').textContent = msg; 
+   };
+
+   const scrollConsoleToBottom = () => { 
+       const el = document.getElementById('consoleOutput'); 
+       el.scrollTop = el.scrollHeight; 
+   };
+
+   const updateDebugBudgetDisplay = () => {
+       const budgetElement = document.getElementById('debugBudget');
+       if (budgetElement) {
+           budgetElement.textContent = `Debug Budget: ${debugBudgetRemaining}/${maxDebugIterations}`;
+           
+           // Update button text to show remaining attempts
+           const executeBtn = document.getElementById('executeDebugBtn');
+           if (!isDebugging) {
+               executeBtn.textContent = `🚀 Execute & Debug (${debugBudgetRemaining} attempts left)`;
+           }
+       }
+   };
+
+const collapsePanels = (collapse) => {
+   const codePanel = document.getElementById('codePanel');
+   const diffPanel = document.getElementById('diffPanel');
+   const executionPanel = document.getElementById('executionPanel');
+   
+   if (collapse) {
+       codePanel.classList.add('collapsed');
+       diffPanel.classList.add('collapsed');
+       executionPanel.classList.add('collapsed');
+   } else {
+       codePanel.classList.remove('collapsed');
+       diffPanel.classList.remove('collapsed');
+       executionPanel.classList.remove('collapsed');
+   }
+   
+   setTimeout(() => { 
+       editor?.layout(); 
+       diffEditor?.layout(); 
+   }, 10);
+};
+
+
+// Update showPanels function:
+const showPanels = () => {
+   document.getElementById('codePanel').classList.remove('collapsed');
+   document.getElementById('diffPanel').classList.remove('collapsed');
+   document.getElementById('executionPanel').classList.remove('collapsed');
+   setTimeout(() => { 
+       editor?.layout(); 
+       diffEditor?.layout(); 
+   }, 10);
+};
+
+
+const updateExecutionOutput = (content) => {
+   const executionOutput = document.getElementById('executionOutput');
+   executionOutput.innerHTML = `<pre style="margin: 0; padding: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word;">${content}</pre>`;
+   executionOutput.scrollTop = executionOutput.scrollHeight;
+};
+
+
+   const showDiff = (original, modified) => {
+       try {
+           const diffContainer = document.getElementById('diffContainer');
+           
+           if (!original || !modified) {
+               diffContainer.innerHTML = '<div class="no-diff">No changes to display.</div>';
+               return;
+           }
+           
+           if (!diffEditor) {
+               console.error('Diff editor not initialized');
+               diffContainer.innerHTML = '<div class="no-diff">Diff editor not initialized.</div>';
+               return;
+           }
+           
+           // Clear the container's inner HTML if showing "no diff" message
+           if (diffContainer.querySelector('.no-diff')) {
+               diffContainer.innerHTML = '';
+               // Re-create the diff editor container
+               const editorDiv = document.createElement('div');
+               editorDiv.style.width = '100%';
+               editorDiv.style.height = '100%';
+               diffContainer.appendChild(editorDiv);
+               
+               // Re-create diff editor
+               diffEditor = monaco.editor.createDiffEditor(editorDiv, {
+                   theme: 'vs-dark', 
+                   automaticLayout: true, 
+                   fontSize: 12, 
+                   renderSideBySide: false,
+                   readOnly: true,
+                   enableSplitViewResizing: false,
+                   renderLineHighlight: 'none',
+                   minimap: { enabled: true },
+                   scrollBeyondLastLine: false,
+                   wordWrap: 'on',
+                   diffCodeLens: true,
+                   ignoreTrimWhitespace: false,
+                   renderOverviewRuler: true
+               });
+           }
+           
+           // Create new models
+           const originalModel = monaco.editor.createModel(original, 'cpp');
+           const modifiedModel = monaco.editor.createModel(modified, 'cpp');
+           
+           // Set the models
+           diffEditor.setModel({ 
+               original: originalModel, 
+               modified: modifiedModel 
+           });
+           
+           // Force layout update
+           setTimeout(() => {
+               diffEditor.layout();
+           }, 50);
+           
+           console.log('Diff updated successfully with inline view');
+       } catch (error) {
+           console.error('Error updating diff:', error);
+           document.getElementById('diffContainer').innerHTML = '<div class="no-diff">Error showing diff</div>';
+       }
+   };
+
+   const applyNewCode = (original, fixed) => {
+       currentCode = fixed;
+       editor.setValue(fixed);
+       showDiff(original, fixed);
+   };
+
+   const formatAsComments = (text) => {
+       if (!text) return '';
+       
+       const lines = text.split('\n');
+       const commentedLines = lines.map(line => line.trim() ? `// ${line}` : '//');
+       
+       commentedLines.unshift('// ' + '='.repeat(78));
+       commentedLines.unshift('// PROBLEM DESCRIPTION:');
+       commentedLines.push('// ' + '='.repeat(78));
+       
+       return commentedLines.join('\n');
+   };
+
+const resetDebugState = () => {
+   isDebugging = false;
+   debugIterations = 0;
+   debugBudgetRemaining = maxDebugIterations; // Reset debug budget
+   iterations = [];
+   selectedIteration = null;
+   updateIterationsList();
+   updateDebugBudgetDisplay();
+   
+   const executeBtn = document.getElementById('executeDebugBtn');
+   executeBtn.textContent = `🚀 Execute & Debug (${debugBudgetRemaining} attempts left)`;
+   executeBtn.classList.remove('btn-secondary');
+   executeBtn.classList.add('btn-primary');
+   
+   document.getElementById('iterationCount').textContent = '0';
+   
+   // Clear diff editor
+   const diffContainer = document.getElementById('diffContainer');
+   diffContainer.innerHTML = '<div class="no-diff">No changes yet.</div>';
+   
+   document.getElementById('executionOutput').innerHTML = '<div class="no-output">No execution results yet.</div>';
+   showPanels();
+};
+
+   /* ======= HELPER FUNCTIONS FOR DEFECTS4C ======= */
+
+   // Helper function to load defect by ID
+   async function loadDefectById(defectId) {
+       try {
+           const apiUrl = 'https://defects4c.wj2ai.com';
+           const response = await fetch(`${apiUrl}/get_defect/${defectId}`);
+           
+           if (!response.ok) {
+               throw new Error(`HTTP ${response.status}: Failed to fetch defect`);
+           }
+           
+           return await response.json();
+       } catch (error) {
+           console.error('Error loading defect by ID:', error);
+           return null;
+       }
+   }
+
+   // Helper function to clear defect information
+   function clearDefectInfo() {
+       document.getElementById('defectId').textContent = '-';
+       document.getElementById('shaId').textContent = '-';
+       document.getElementById('defectStatusBadge').textContent = '-';
+       document.getElementById('defectStatusBadge').className = 'status-badge';
+       document.getElementById('commitBefore').textContent = '-';
+       document.getElementById('commitAfter').textContent = '-';
+       document.getElementById('commitDate').textContent = '-';
+       document.getElementById('githubUrl').textContent = '-';
+       document.getElementById('githubUrl').href = '#';
+       document.getElementById('srcFiles').innerHTML = '<li>No files loaded</li>';
+       document.getElementById('testFiles').innerHTML = '<li>No files loaded</li>';
+       document.getElementById('hunkStart').textContent = '-';
+       document.getElementById('hunkEnd').textContent = '-';
+       document.getElementById('funcStart').textContent = '-';
+       document.getElementById('funcEnd').textContent = '-';
+       document.getElementById('bugTypeName').textContent = '-';
+       document.getElementById('bugTypeId').textContent = '-';
+       document.getElementById('bugTypeCategory').textContent = '-';
+       document.getElementById('promptTemperature').textContent = '-';
+       document.getElementById('buggyCode').textContent = '-';
+       document.getElementById('testNames').innerHTML = '<li>No test names</li>';
+       document.getElementById('unitTestStatus').textContent = '-';
+       document.getElementById('buildFlags').innerHTML = '<li>No build flags</li>';
+       document.getElementById('defectIdInput').value = '';
+   }
+
+   // Initialize Split.js for resizable panels
+   initializeSplitPanes();
+
+   // Load initial problem on startup
+   loadInitialProblem();
+
+   /* ======= Split Panes Setup ======= */
+
+function initializeSplitPanes() {
+   // Check if Split.js is loaded
+   if (typeof Split === 'undefined') {
+       console.log('Waiting for Split.js to load...');
+       setTimeout(initializeSplitPanes, 100);
+       return;
+   }
+   
+   try {
+       // Main horizontal split: Debug Iterations | (Code Editor + Diff + Execution + Console)
+       Split(['.left-panel', '.right-panel'], {
+           sizes: [20, 80],
+           minSize: [300, 300],
+           gutterSize: 6,
+           cursor: 'col-resize',
+           onDragEnd: () => {
+               setTimeout(() => {
+                   editor?.layout();
+                   diffEditor?.layout();
+               }, 100);
+           }
+       });
+
+       // Right panel vertical split: (Code Editor + Diff + Execution) | Console
+       Split(['.right-top', '.bottom-panel'], {
+           direction: 'vertical',
+           sizes: [70, 30],
+           minSize: [200, 150],
+           gutterSize: 6,
+           cursor: 'row-resize',
+           onDragEnd: () => {
+               setTimeout(() => {
+                   editor?.layout();
+                   diffEditor?.layout();
+               }, 100);
+           }
+       });
+
+       // Top right horizontal split: Code Editor | Diff + Execution container
+       Split(['#codePanel', '#diffExecutionContainer'], {
+           sizes: [60, 40],
+           minSize: [200, 200],
+           gutterSize: 6,
+           cursor: 'col-resize',
+           onDragEnd: () => {
+               setTimeout(() => {
+                   editor?.layout();
+                   diffEditor?.layout();
+               }, 100);
+           }
+       });
+
+       // Split the diff and execution panels vertically
+       Split(['#diffPanel', '#executionPanel'], {
+           direction: 'vertical',
+           sizes: [50, 50],
+           minSize: [100, 100],
+           gutterSize: 6,
+           cursor: 'row-resize',
+           onDragEnd: () => {
+               setTimeout(() => {
+                   diffEditor?.layout();
+               }, 100);
+           }
+       });
+       
+       console.log('Split.js initialized successfully');
+       
+   } catch (error) {
+       console.error('Error initializing Split.js:', error);
+       console.log('Continuing without resizable panels');
+   }
+}
+
+   /* ======= INITIAL PROBLEM LOAD ======= */
+   function loadInitialProblem() {
+       updateStatus('processing', 'Loading initial defect...');
+       const consoleOutput = document.getElementById('consoleOutput');
+       consoleOutput.textContent = '> Loading random defect from defects4c...';
+       scrollConsoleToBottom();
+       
+       const apiUrl = 'https://defects4c.wj2ai.com';
+       
+       fetch(`${apiUrl}/reset`)
+           .then(response => response.json())
+           .then(res => {
+               let newCode = `// Defects4C - C/C++ Code Repair Challenge\n// No defect loaded yet\n\n// Instructions:\n// 1. Enter a defect ID in the left panel\n// 2. Click "Load Defect" to fetch defect information\n// 3. Write your fix in this editor\n// 4. Click "Execute & Debug" to test your solution\n\nconsole.log("Ready to start fixing defects!");`;
+               let defectInfo = '';
+               
+               try {
+                   if (res && res.defect_id) {
+                       // Store the defect ID globally
+                       currentBugId = res.defect_id;
+                       
+                       // Auto-load the defect information
+                       loadDefectById(res.defect_id)
+                           .then(defectData => {
+                               if (defectData) {
+                                   updateDefectInfo(defectData);
+                                   
+                                   // Create initial code with defect context
+                                   const userPrompt = defectData.prompt_data?.prompt?.find(p => p.role === 'user');
+                                   if (userPrompt) {
+                                       // Extract the buggy code section
+                                       const content = userPrompt.content;
+                                       const infillMatch = content.match(/```cpp\n([\s\S]*?)>>> \[ INFILL \] <<<([\s\S]*?)\n```/);
+                                       const buggyMatch = content.match(/```cpp\n\/\/ buggy hunk\n([\s\S]*?)\n```/);
+                                       
+                                       newCode = `// Defect: ${res.defect_id}\n// Fix the C++ code issue below\n\n`;
+                                       newCode += `// Original buggy code that was removed:\n`;
+                                       if (buggyMatch) {
+                                           newCode += `/*\n${buggyMatch[1].trim()}\n*/\n\n`;
+                                       }
+                                       
+                                       if (infillMatch) {
+                                           newCode += `// Code context with INFILL location:\n`;
+                                           newCode += `/*\n${infillMatch[0]}\n*/\n\n`;
+                                       }
+                                       
+                                       newCode += `// Write your fix here:\n// The code should go where the >>> [ INFILL ] <<< marker was\n\n`;
+                                       
+                                       editor.setValue(newCode);
+                                   }
+                               }
+                           });
+                       
+                       defectInfo = `\n\n=== Initial Defect Loaded ===\n` +
+                                   `Defect ID: ${res.defect_id}\n` +
+                                   `Type: C/C++ Code Repair\n` +
+                                   `Status: Ready for fixing\n`;
+                       
+                       console.log('Initial Defect ID set to:', currentBugId);
+                   } else if (res && res.message) {
+                       // Handle case where reset gives us a message but no specific defect
+                       consoleOutput.textContent += `\n> ${res.message}`;
+                       consoleOutput.textContent += '\n> Please manually enter a defect ID to load a specific defect.';
+                       
+                       newCode = `// Defects4C - C/C++ Code Repair\n// Please load a defect using the "Load Defect" button\n\nconsole.log("Please load a defect to start");`;
+                       currentBugId = null;
+                   }
+               } catch (parseError) {
+                   console.warn('Initial load response parsing error:', parseError);
+                   consoleOutput.textContent += '\n> Warning: Response parsing issue, using default interface';
+                   currentBugId = null;
+               }
+               
+               if (!currentBugId) {
+                   editor.setValue(newCode);
+               }
+               
+               consoleOutput.textContent += '\n> Defects4C interface loaded successfully';
+               consoleOutput.textContent += defectInfo;
+               consoleOutput.textContent += '\n> Ready to start! Load a defect and click "Execute & Debug" when ready.';
+               updateStatus('ready', 'Ready');
+               
+               resetDebugState();
+               scrollConsoleToBottom();
+           })
+           .catch(error => {
+               consoleOutput.textContent += `\n> Initial load failed: ${error.message || 'Unknown error'}`;
+               consoleOutput.textContent += '\n> Using default interface - you can still load defects manually';
+               
+               const defaultCode = `// Defects4C - C/C++ Code Repair (Offline Mode)\n// Failed to connect to API\n\n// You can still:\n// 1. Enter a defect ID manually\n// 2. Click "Load Defect" to try again\n\nconsole.log("Offline mode - please load defect manually");`;
+               editor.setValue(defaultCode);
+               updateStatus('ready', 'Ready (offline)');
+               currentBugId = null;
+               
+               resetDebugState();
+               scrollConsoleToBottom();
+           });
+   }
+
+   /* ======= UI Event Handlers ======= */
+   document.getElementById('modelSelect').addEventListener('change', () => {
+       const selectedText = document.getElementById('modelSelect').selectedOptions[0].text;
+       // You can add current model display if needed
+   });
+
+   document.getElementById('executeDebugBtn').addEventListener('click', () => {
+       if (isDebugging) {
+           stopDebugging();
+       } else {
+           executeAndDebug();
+       }
+   });
+
+   document.getElementById('resetBtn').addEventListener('click', resetCode);
+
+   /* ======= RESET FUNCTIONALITY ======= */
+
+   function resetCode() {
+       updateStatus('processing', 'Loading new defect...');
+       const consoleOutput = document.getElementById('consoleOutput');
+       const executionOutput = document.getElementById('executionOutput');
+       
+       // Clear both outputs at the start of reset
+       consoleOutput.textContent = '> Fetching new defect from defects4c...';
+       executionOutput.innerHTML = '<div class="no-output">No execution results yet.</div>';
+       scrollConsoleToBottom();
+       
+       const apiUrl = 'https://defects4c.wj2ai.com';
+       
+       fetch(`${apiUrl}/reset`)
+           .then(response => response.json())
+           .then(res => {
+               let newCode = `// Defects4C - C/C++ Code Repair Challenge\n// No specific defect loaded\n\nconsole.log("Please load a defect to start");`;
+               let defectInfo = '';
+               
+               try {
+                   if (res && res.defect_id) {
+                       // Store the defect ID globally
+                       currentBugId = res.defect_id;
+                       
+                       // Clear existing defect info first
+                       document.getElementById('defectIdInput').value = res.defect_id;
+                       
+                       // Auto-load the new defect information
+                       loadDefectById(res.defect_id)
+                           .then(defectData => {
+                               if (defectData) {
+                                   updateDefectInfo(defectData);
+                                   
+                                   // Create initial code with defect context
+                                   const userPrompt = defectData.prompt_data?.prompt?.find(p => p.role === 'user');
+                                   if (userPrompt) {
+                                       // Extract the buggy code section
+                                       const content = userPrompt.content;
+                                       const infillMatch = content.match(/```cpp\n([\s\S]*?)>>> \[ INFILL \] <<<([\s\S]*?)\n```/);
+                                       const buggyMatch = content.match(/```cpp\n\/\/ buggy hunk\n([\s\S]*?)\n```/);
+                                       
+                                       newCode = `// New Defect: ${res.defect_id}\n// Fix the C++ code issue below\n\n`;
+                                       newCode += `// Original buggy code that was removed:\n`;
+                                       if (buggyMatch) {
+                                           newCode += `/*\n${buggyMatch[1].trim()}\n*/\n\n`;
+                                       }
+                                       
+                                       if (infillMatch) {
+                                           newCode += `// Code context with INFILL location:\n`;
+                                           newCode += `/*\n${infillMatch[0]}\n*/\n\n`;
+                                       }
+                                       
+                                       newCode += `// Write your fix here:\n// The code should go where the >>> [ INFILL ] <<< marker was\n\n`;
+                                       
+                                       editor.setValue(newCode);
+                                   }
+                               }
+                           });
+                       
+                       defectInfo = `\n\n=== New Defect Loaded ===\n` +
+                                   `Defect ID: ${res.defect_id}\n` +
+                                   `Type: C/C++ Code Repair\n` +
+                                   `Status: Ready for fixing\n`;
+                       
+                       console.log('Current Defect ID set to:', currentBugId);
+                   } else if (res && res.message) {
+                       // Handle case where reset gives us a message but no specific defect
+                       consoleOutput.textContent += `\n> ${res.message}`;
+                       consoleOutput.textContent += '\n> You can manually enter a defect ID to load a specific defect.';
+                       
+                       newCode = `// Defects4C - Reset Complete\n// Please load a defect using the "Load Defect" button\n// or let the system assign you a random defect\n\nconsole.log("Reset complete - please load a defect");`;
+                       currentBugId = null;
+                       
+                       // Clear the defect info panel
+                       clearDefectInfo();
+                   }
+               } catch (parseError) {
+                   console.warn('Reset response parsing error:', parseError);
+                   consoleOutput.textContent += '\n> Warning: Response parsing issue, cleared to default state';
+                   currentBugId = null;
+                   clearDefectInfo();
+               }
+               
+               if (!currentBugId) {
+                   editor.setValue(newCode);
+               }
+               
+               consoleOutput.textContent += '\n> Reset completed successfully';
+               consoleOutput.textContent += defectInfo;
+               updateStatus('ready', 'Ready');
+               
+               resetDebugState();
+               scrollConsoleToBottom();
+           })
+           .catch(error => {
+               consoleOutput.textContent += `\n> Reset failed: ${error.message || 'Unknown error'}`;
+               consoleOutput.textContent += '\n> Cleared to default state - you can load defects manually';
+               
+               const defaultCode = `// Defects4C - Reset Failed\n// Connection issue with API\n\n// You can still:\n// 1. Enter a defect ID manually\n// 2. Click "Load Defect" to try loading a specific defect\n\nconsole.log("Reset failed - manual mode available");`;
+               editor.setValue(defaultCode);
+               updateStatus('ready', 'Ready (offline)');
+               currentBugId = null;
+               
+               clearDefectInfo();
+               resetDebugState();
+               scrollConsoleToBottom();
+           });
+   }
+
+   /* ======= DEBUG FLOW WITH BUDGET SYSTEM ======= */
+   function executeAndDebug() {
+       isDebugging = true;
+       originalCode = editor.getValue();
+       currentCode = originalCode;
+       debugIterations = 0;
+       iterations = [];
+       updateIterationsList();
+       
+       const executeBtn = document.getElementById('executeDebugBtn');
+       executeBtn.textContent = '🛑 Stop Debugging';
+       executeBtn.classList.remove('btn-primary');
+       executeBtn.classList.add('btn-secondary');
+       
+       updateStatus('processing', 'Executing…');
+       updateDebugBudgetDisplay();
+       collapsePanels(true);
+       executeCode(currentCode);
+   }
+
+   function stopDebugging() {
+       isDebugging = false;
+       
+       const executeBtn = document.getElementById('executeDebugBtn');
+       executeBtn.textContent = `🚀 Execute & Debug (${debugBudgetRemaining} attempts left)`;
+       executeBtn.classList.remove('btn-secondary');
+       executeBtn.classList.add('btn-primary');
+       
+       updateStatus('ready', 'Ready');
+       collapsePanels(false);
+   }
+
+   /* ----------- UPDATED EXECUTE CODE FUNCTION ------------ */
+
+
+async function executeCode(code) {
+    updateStatus('processing', 'Building patch...');
+    const consoleOutput = document.getElementById('consoleOutput');
+    consoleOutput.textContent += '\n> Building patch from code...';
+    
+    if (!currentBugId) {
+        consoleOutput.textContent += '\n> Error: No bug ID available. Please load a defect first.';
+        updateStatus('error', 'No bug loaded');
+        stopDebugging();
+        return;
+    }
+    
+    scrollConsoleToBottom();
+    
+    const apiUrl = 'https://defects4c.wj2ai.com';
+    
+    try {
+        // Step 1: Build patch
+        consoleOutput.textContent += `\n> Step 1/3: Building patch for ${currentBugId}...`;
+        const patchResponse = await fetch(`${apiUrl}/build_patch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bug_id: currentBugId,
+                llm_response: code,
+                method: "direct",
+                generate_diff: true,
+                persist_flag: true
+            })
+        });
+        
+        const patchResult = await patchResponse.json();
+        
+        if (!patchResult.success) {
+            const errorMsg = patchResult.error || 'Unknown error';
+            consoleOutput.textContent += `\n> Patch build failed: ${errorMsg}`;
+            
+            let executionContent = `=== PATCH BUILD ERROR ===\n${errorMsg}`;
+            updateExecutionOutput(executionContent);
+            
+            if (isDebugging && debugBudgetRemaining > 0 && !errorMsg.includes('markdown extract fail')) {
+                startDebugIteration(code, errorMsg);
+            } else if (debugBudgetRemaining === 0) {
+                consoleOutput.textContent += '\n> Debug budget exhausted!';
+                updateStatus('error', 'Debug budget exhausted');
+                stopDebugging();
+            } else {
+                updateStatus('error', 'Patch build failed');
+                stopDebugging();
+            }
+            return;
+        }
+        
+        const fixPath = patchResult.fix_p;
+        if (!fixPath) {
+            consoleOutput.textContent += '\n> Patch build succeeded but no fix_p returned';
+            updateStatus('error', 'Invalid patch response');
+            stopDebugging();
+            return;
+        }
+        
+        consoleOutput.textContent += `\n> Patch built successfully: ${fixPath}`;
+        
+        // Step 2: Submit fix
+        consoleOutput.textContent += '\n> Step 2/3: Submitting fix...';
+        const fixResponse = await fetch(`${apiUrl}/fix2`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bug_id: currentBugId,
+                patch_path: fixPath
+            })
+        });
+        
+        const fixResult = await fixResponse.json();
+        
+        if (!fixResult.handle) {
+            consoleOutput.textContent += '\n> Fix submission failed';
+            updateStatus('error', 'Fix submission failed');
+            stopDebugging();
+            return;
+        }
+        
+        currentHandle = fixResult.handle;
+        consoleOutput.textContent += `\n> Fix submitted, handle: ${currentHandle}`;
+        
+        // Step 3: Poll status
+        consoleOutput.textContent += '\n> Step 3/3: Running tests...';
+        
+        const maxWaitTime = 300; // 5 minutes
+        const pollInterval = 5; // 5 seconds
+        const startTime = Date.now();
+        
+        while ((Date.now() - startTime) < maxWaitTime * 1000) {
+            const statusResponse = await fetch(`${apiUrl}/status/${currentHandle}`);
+            
+            if (statusResponse.status !== 200) {
+                consoleOutput.textContent += '\n> Error checking status';
+                updateStatus('error', 'Status check failed');
+                stopDebugging();
+                return;
+            }
+            
+            const statusData = await statusResponse.json();
+            const currentStatus = statusData.status || 'unknown';
+            
+            if (currentStatus === 'completed') {
+                const fixStatus = statusData.fix_status || '';
+                
+                let executionContent = '=== TEST RESULTS ===\n';
+                executionContent += `Status: ${fixStatus}\n`;
+                
+                if (statusData.fix_log) {
+                    executionContent += `\nExecution Log:\n${statusData.fix_log}`;
+                }
+                
+                consoleOutput.textContent += `\n> Tests completed: ${fixStatus}`;
+                
+                if (fixStatus.toLowerCase().includes('success')) {
+                    executionContent += '\n\n✅ All tests passed!';
+                    consoleOutput.textContent += '\n✅ All tests passed!';
+                    
+                    if (debugIterations > 0) {
+                        consoleOutput.textContent += `\n🎉 Problem solved after ${debugIterations} debug iterations!`;
+                    }
+                    
+                    updateExecutionOutput(executionContent);
+                    updateStatus('ready', 'Tests passed!');
+                    stopDebugging();
+                } else {
+                    updateExecutionOutput(executionContent);
+                    
+                    if (isDebugging && debugBudgetRemaining > 0) {
+                        const errorMsg = statusData.fix_log || 'Test failed';
+                        startDebugIteration(code, errorMsg);
+                    } else if (debugBudgetRemaining === 0) {
+                        consoleOutput.textContent += '\n> Debug budget exhausted!';
+                        updateStatus('error', 'Debug budget exhausted');
+                        stopDebugging();
+                    } else {
+                        updateStatus('error', 'Tests failed');
+                        stopDebugging();
+                    }
+                }
+                return;
+                
+            } else if (currentStatus === 'failed' || currentStatus === 'error') {
+                consoleOutput.textContent += `\n> Task failed with status: ${currentStatus}`;
+                updateStatus('error', 'Task failed');
+                stopDebugging();
+                return;
+            }
+            
+            // Wait before next poll
+            await new Promise(resolve => setTimeout(resolve, pollInterval * 1000));
+        }
+        
+        // Timeout
+        consoleOutput.textContent += '\n> Timeout waiting for test results';
+        updateStatus('error', 'Timeout');
+        stopDebugging();
+        
+    } catch (error) {
+        const errorContent = `=== ERROR ===\n${error.message}`;
+        updateExecutionOutput(errorContent);
+        
+        consoleOutput.textContent += `\n> Error: ${error.message}`;
+        scrollConsoleToBottom();
+        updateStatus('error', 'Error');
+        stopDebugging();
+    }
+}
+
+
+
+
+
+async function startDebugIteration(originalCode, errorMessage) {
+    // Check budget before starting debug iteration
+    if (debugBudgetRemaining <= 0) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        consoleOutput.textContent += '\n> Debug budget exhausted! Cannot perform more automatic fixes.';
+        scrollConsoleToBottom();
+        updateStatus('error', 'Debug budget exhausted');
+        stopDebugging();
+        return;
+    }
+
+    debugIterations++;
+    debugBudgetRemaining--; // Consume budget
+    document.getElementById('iterationCount').textContent = debugIterations;
+    updateStatus('processing', `Debug step ${debugIterations}/${maxDebugIterations}`);
+    updateDebugBudgetDisplay();
+
+    showPanels();
+
+    const iteration = {
+        id: debugIterations,
+        title: `Iteration ${debugIterations}`,
+        status: 'processing',
+        description: 'AI analyzing and fixing code…',
+        timestamp: new Date().toLocaleTimeString(),
+        originalCode: originalCode
+    };
+    iterations.push(iteration);
+    updateIterationsList();
+
+    const consoleOutput = document.getElementById('consoleOutput');
+    consoleOutput.textContent += `\n> AI Debug Attempt ${debugIterations}/${maxDebugIterations}:`;
+    consoleOutput.textContent += `\n> Analyzing error: ${errorMessage.substring(0, 100)}...`;
+    
+    try {
+        // Get the selected model from the dropdown
+        const modelSelect = document.getElementById('modelSelect');
+        const selectedModel = modelSelect ? modelSelect.value : 'qwen2.5:7b-instruct-q4_K_M';
+        
+        consoleOutput.textContent += `\n> Calling AI service (${selectedModel})...`;
+        scrollConsoleToBottom();
+        
+        // Call the actual AI API
+        const apiUrl = 'https://defects4c.wj2ai.com';
+        const response = await fetch(`${apiUrl}/ask_llm_stream`, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: originalCode,
+                feedback: errorMessage,
+                model: selectedModel
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Handle streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+        
+        consoleOutput.textContent += '\n> Receiving AI response...';
+        scrollConsoleToBottom();
+        
+        // Update iteration description to show streaming
+        iteration.description = 'Receiving AI response...';
+        updateIterationsList();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            fullResponse += chunk;
+            
+            // Update iteration description with partial response length
+            iteration.description = `Processing AI response... (${fullResponse.length} chars)`;
+            updateIterationsList();
+        }
+
+        consoleOutput.textContent += `\n> AI response received (${fullResponse.length} characters)`;
+        scrollConsoleToBottom();
+
+        // Parse the AI response
+        const aiResult = parseStreamResponse(fullResponse);
+        
+        if (!aiResult || !aiResult.fixed_code) {
+            throw new Error('AI response does not contain valid fixed code');
+        }
+
+        const fixedCode = aiResult.fixed_code;
+        
+        // Update iteration with success
+        iteration.status = 'success';
+        iteration.description = aiResult.explanation || 'AI fix applied';
+        iteration.fixedCode = fixedCode;
+        
+        // Log AI explanation if available
+        if (aiResult.explanation) {
+            consoleOutput.textContent += `\n> AI Explanation: ${aiResult.explanation.substring(0, 200)}...`;
+        }
+        
+        if (aiResult.changes_made && aiResult.changes_made.length > 0) {
+            consoleOutput.textContent += `\n> Changes made: ${aiResult.changes_made.length} modifications`;
+        }
+        
+        // Show diff between iterations
+        showDiff(originalCode, fixedCode);
+        
+        applyNewCode(originalCode, fixedCode);
+        updateIterationsList();
+        
+        // Continue debugging if we have budget
+        if (debugBudgetRemaining > 0) {
+            consoleOutput.textContent += `\n> Testing AI-fixed code... (${debugBudgetRemaining} attempts remaining)`;
+            scrollConsoleToBottom();
+            executeCode(fixedCode);
+        } else {
+            consoleOutput.textContent += '\n> Debug budget exhausted! This was the final attempt.';
+            scrollConsoleToBottom();
+            updateStatus('ready', 'Debug budget exhausted');
+            stopDebugging();
+        }
+        
+    } catch (error) {
+        console.error('Debug iteration error:', error);
+        
+        // Update iteration with error
+        iteration.status = 'error';
+        iteration.description = 'Error: ' + error.message;
+        updateIterationsList();
+        
+        consoleOutput.textContent += `\n> AI Debug Error: ${error.message}`;
+        scrollConsoleToBottom();
+        
+        if (debugBudgetRemaining === 0) {
+            consoleOutput.textContent += '\n> Debug budget exhausted after error.';
+            updateStatus('error', 'Debug budget exhausted');
+        } else {
+            updateStatus('error', 'AI debug failed');
+        }
+        
+        stopDebugging();
+    }
+}
+
+
+
+
+   function parseStreamResponse(fullText) {
+       // Look for the structured response format
+       const fixedCodeMatch = fullText.match(/<fixed_code>([\s\S]*?)<\/fixed_code>/);
+       const explanationMatch = fullText.match(/<explanation>([\s\S]*?)<\/explanation>/);
+       const changesMatch = fullText.match(/<changes_made>([\s\S]*?)<\/changes_made>/);
+       
+       if (fixedCodeMatch) {
+           let fixedCode = fixedCodeMatch[1].trim();
+           
+           // Remove triple backticks if present
+           if (fixedCode.startsWith('```cpp')) {
+               fixedCode = fixedCode.replace(/^```cpp\n?/, '').replace(/```$/, '').trim();
+           } else if (fixedCode.startsWith('```')) {
+               fixedCode = fixedCode.replace(/^```\n?/, '').replace(/```$/, '').trim();
+           }
+           
+           return {
+               fixed_code: fixedCode,
+               explanation: explanationMatch ? explanationMatch[1].trim() : '',
+               changes_made: changesMatch ? changesMatch[1].trim().split('\n').map(line => line.trim().replace(/^[-•]\s*/, '')) : []
+           };
+       }
+       
+
+       // Fallback: try to find JSON in the response
+       try {
+           const jsonMatch = fullText.match(/\{[\s\S]*?\}/);
+           if (jsonMatch) {
+               const parsed = JSON.parse(jsonMatch[0]);
+               // Also clean backticks from JSON response
+               if (parsed.fixed_code) {
+                   let fixedCode = parsed.fixed_code.trim();
+                   if (fixedCode.startsWith('```cpp')) {
+                       fixedCode = fixedCode.replace(/^```cpp\n?/, '').replace(/```$/, '').trim();
+                   } else if (fixedCode.startsWith('```')) {
+                       fixedCode = fixedCode.replace(/^```\n?/, '').replace(/```$/, '').trim();
+                   }
+                   parsed.fixed_code = fixedCode;
+               }
+               return parsed;
+           }
+       } catch (e) {
+           console.warn('JSON parsing failed:', e);
+       }
+       
+       return null;
+   }
+
+   /* -------- Iterations List UI -------- */
+   function updateIterationsList() {
+       const iterationsList = document.getElementById('iterationsList');
+       
+       if (!iterations.length) {
+           iterationsList.innerHTML = '<div class="no-iterations">No debug iterations yet.</div>';
+           return;
+       }
+
+       let html = '';
+       iterations.forEach(iteration => {
+           const active = iteration.id === selectedIteration ? 'active' : '';
+           const budgetInfo = debugBudgetRemaining < maxDebugIterations ? 
+               `<div style="font-size:0.65em;color:#f85149;margin-top:2px;">Budget: ${maxDebugIterations - iteration.id + 1}/${maxDebugIterations} remaining after this</div>` : '';
+           
+           html += `
+               <div class="iteration-item ${active}" data-id="${iteration.id}">
+                   <div class="iteration-header">
+                       <span class="iteration-title">${iteration.title}</span>
+                       <span class="iteration-status ${iteration.status}">${iteration.status}</span>
+                   </div>
+                   <div class="iteration-description">${iteration.description}</div>
+                   <div style="font-size:0.7em;color:#6e7681;margin-top:4px;">${iteration.timestamp}</div>
+                   ${budgetInfo}
+               </div>
+           `;
+       });
+
+       iterationsList.innerHTML = html;
+
+       // Add click event listeners
+       document.querySelectorAll('.iteration-item').forEach(item => {
+           item.addEventListener('click', function() {
+               const id = parseInt(this.dataset.id);
+               selectIteration(id);
+           });
+       });
+   }
+
+   function selectIteration(id) {
+       selectedIteration = id;
+       
+       document.querySelectorAll('.iteration-item').forEach(item => {
+           item.classList.remove('active');
+       });
+       
+       const selectedItem = document.querySelector(`.iteration-item[data-id="${id}"]`);
+       if (selectedItem) {
+           selectedItem.classList.add('active');
+       }
+
+       const iteration = iterations.find(it => it.id === id);
+       if (iteration && iteration.fixedCode) {
+           applyNewCode(iteration.originalCode, iteration.fixedCode);
+           showPanels();
+       }
+   }
+
+   /* Initialize */
+   updateStatus('loading', 'Initializing...');
+   updateDebugBudgetDisplay();
+}
+
+
+
+// Move updateDefectInfo function to global scope
+function updateDefectInfo(data) {
+    // Update defect ID and basic info
+    document.getElementById('defectId').textContent = data.defect_id || '-';
+    document.getElementById('shaId').textContent = data.sha_id || '-';
+    
+    // Update status
+    const statusBadge = document.getElementById('defectStatusBadge');
+    statusBadge.textContent = data.status || '-';
+    statusBadge.className = 'status-badge';
+    if (data.status === 'success') {
+        statusBadge.classList.add('success');
+    } else if (data.status === 'error') {
+        statusBadge.classList.add('error');
+    }
+    
+    // Update commit information
+    const metadata = data.additional_info?.metadata;
+    if (metadata) {
+        document.getElementById('commitBefore').textContent = metadata.commit_before || '-';
+        document.getElementById('commitAfter').textContent = metadata.commit_after || '-';
+        document.getElementById('commitDate').textContent = metadata.commit_date || '-';
+        
+        // Update GitHub URL
+        const githubUrl = document.getElementById('githubUrl');
+        if (metadata.url) {
+            githubUrl.href = metadata.url;
+            githubUrl.textContent = 'View on GitHub';
+        } else {
+            githubUrl.textContent = '-';
+            githubUrl.href = '#';
+        }
+    }
+    
+    // Update source files
+    const srcFilesList = document.getElementById('srcFiles');
+    srcFilesList.innerHTML = '';
+    if (metadata?.files?.src && metadata.files.src.length > 0) {
+        metadata.files.src.forEach(file => {
+            const li = document.createElement('li');
+            li.textContent = file;
+            srcFilesList.appendChild(li);
+        });
+    } else {
+        srcFilesList.innerHTML = '<li>No source files</li>';
+    }
+    
+    // Update test files
+    const testFilesList = document.getElementById('testFiles');
+    testFilesList.innerHTML = '';
+    if (metadata?.files?.test && metadata.files.test.length > 0) {
+        metadata.files.test.forEach(file => {
+            const li = document.createElement('li');
+            li.textContent = file;
+            testFilesList.appendChild(li);
+        });
+    } else {
+        testFilesList.innerHTML = '<li>No test files</li>';
+    }
+    
+    // Update location information
+    if (metadata?.files?.src0_location) {
+        const loc = metadata.files.src0_location;
+        document.getElementById('hunkStart').textContent = loc.hunk_start || '-';
+        document.getElementById('hunkEnd').textContent = loc.hunk_end || '-';
+        document.getElementById('funcStart').textContent = loc.func_start || '-';
+        document.getElementById('funcEnd').textContent = loc.func_end || '-';
+    }
+    
+    // Update bug type information
+    if (metadata?.type) {
+        document.getElementById('bugTypeName').textContent = metadata.type.name || '-';
+        document.getElementById('bugTypeId').textContent = metadata.type.id || '-';
+        document.getElementById('bugTypeCategory').textContent = metadata.type.type || '-';
+    }
+    
+    // Update prompt information
+    if (data.prompt_data) {
+        document.getElementById('promptTemperature').textContent = data.prompt_data.temperature || '-';
+        
+        // Extract buggy code from prompt
+        const prompt = data.prompt_data.prompt;
+        if (prompt && prompt.length > 1) {
+            const userContent = prompt[1].content;
+            // Extract the buggy hunk from the content
+            const buggyHunkMatch = userContent.match(/```cpp\n\/\/ buggy hunk\n([\s\S]*?)\n```/);
+            if (buggyHunkMatch) {
+                document.getElementById('buggyCode').textContent = buggyHunkMatch[1].trim();
+            } else {
+                document.getElementById('buggyCode').textContent = 'Buggy code not found in prompt';
+            }
+        }
+    }
+    
+    // Update unit test information
+    if (metadata?.unittest) {
+        document.getElementById('unitTestStatus').textContent = metadata.unittest.status || '-';
+        
+        // Update test names
+        const testNamesList = document.getElementById('testNames');
+        testNamesList.innerHTML = '';
+        if (metadata.unittest.name && metadata.unittest.name.length > 0) {
+            metadata.unittest.name.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                testNamesList.appendChild(li);
+            });
+        } else {
+            testNamesList.innerHTML = '<li>No test names</li>';
+        }
+    }
+    
+    // Update build flags
+    if (metadata?.c_compile?.test_flags) {
+        const buildFlagsList = document.getElementById('buildFlags');
+        buildFlagsList.innerHTML = '';
+        metadata.c_compile.test_flags.forEach(flag => {
+            const li = document.createElement('li');
+            li.textContent = flag;
+            buildFlagsList.appendChild(li);
+        });
+    } else {
+        document.getElementById('buildFlags').innerHTML = '<li>No build flags</li>';
+    }
+}
+
+// Remove the duplicate updateDefectInfo function from inside the DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    const loadDefectBtn = document.getElementById('loadDefectBtn');
+    const defectIdInput = document.getElementById('defectIdInput');
+    
+    loadDefectBtn.addEventListener('click', async function() {
+        const defectId = defectIdInput.value.trim();
+        if (!defectId) {
+            alert('Please enter a defect ID');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            loadDefectBtn.textContent = '⏳ Loading...';
+            loadDefectBtn.disabled = true;
+            
+            // Fetch defect information using the correct API endpoint
+            const apiUrl = 'https://defects4c.wj2ai.com';
+            const response = await fetch(`${apiUrl}/get_defect/${defectId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: Failed to fetch defect information`);
+            }
+            
+            const defectData = await response.json();
+            
+            // Update UI with defect information
+            updateDefectInfo(defectData);
+            
+            // Also update the current bug ID for the debugging system
+            currentBugId = defectId;
+            
+            // Update editor with initial code containing the defect context
+            if (defectData.prompt_data?.prompt) {
+                const userPrompt = defectData.prompt_data.prompt.find(p => p.role === 'user');
+                if (userPrompt) {
+                    const content = userPrompt.content;
+                    const infillMatch = content.match(/```cpp\n([\s\S]*?)>>> \[ INFILL \] <<<([\s\S]*?)\n```/);
+                    const buggyMatch = content.match(/```cpp\n\/\/ buggy hunk\n([\s\S]*?)\n```/);
+                    
+                    let initialCode = `// Defect: ${defectId}\n// Fix the following C++ code issue:\n\n`;
+                    
+                    if (buggyMatch) {
+                        initialCode += `// Original buggy code that was removed:\n/*\n${buggyMatch[1].trim()}\n*/\n\n`;
+                    }
+                    
+                    if (infillMatch) {
+                        initialCode += `// Code context with INFILL location:\n/*\n${infillMatch[0]}\n*/\n\n`;
+                    }
+                    
+                    initialCode += `// Write your fix here:\n// The code should go where the >>> [ INFILL ] <<< marker was\n\n`;
+                    
+                    editor.setValue(initialCode);
+                }
+            }
+            
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.textContent = `> Defect ${defectId} loaded successfully`;
+            document.getElementById('statusText').textContent = 'Ready';
+            document.getElementById('statusDot').className = 'status-dot ready';
+            
+        } catch (error) {
+            console.error('Error loading defect:', error);
+            alert('Failed to load defect information: ' + error.message);
+        } finally {
+            loadDefectBtn.textContent = '📥 Load Defect';
+            loadDefectBtn.disabled = false;
+        }
+    });
+});
+
+// Update the API URL in header
+document.addEventListener('DOMContentLoaded', function() {
+    const apiUrlInput = document.getElementById('apiUrl');
+    if (apiUrlInput) {
+        apiUrlInput.value = 'https://defects4c.wj2ai.com';
+    }
+});
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
