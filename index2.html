@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defects4C - C/C++ Program Repair Benchmark</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .nav-banner {
+            background: #333;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .nav-banner::before,
+        .nav-banner::after {
+            content: '◀';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        .nav-banner::before {
+            left: 20px;
+        }
+
+        .nav-banner::after {
+            content: '▶';
+            right: 20px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-left {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-left a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-left a:hover {
+            color: #ff6b35;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-icons a {
+            color: #888;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+
+        .social-icons a:hover {
+            color: #fff;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid #333;
+            background: transparent;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        .btn-primary {
+            background: #ff6b35;
+            border-color: #ff6b35;
+        }
+
+        .btn-primary:hover {
+            background: #e55a2b;
+            border-color: #e55a2b;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #ff6b35;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 30px;
+            line-height: 1.1;
+        }
+
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #ff6b35, #ffa726);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 60px;
+        }
+
+        .btn-large {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Trusted By Section */
+        .trusted-by {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .trusted-by h3 {
+            color: #888;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .trusted-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .trusted-logos span {
+            color: #666;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Sandbox Demo */
+        .sandbox-demo {
+            max-width: 1000px;
+            margin: 0 auto 80px;
+            padding: 0 40px;
+        }
+
+        .sandbox-container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+        }
+
+        .sandbox-header {
+            background: #2a2a2a;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .sandbox-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .control-btn.close { background: #ff5f5f; }
+        .control-btn.minimize { background: #ffbd2e; }
+        .control-btn.maximize { background: #28ca42; }
+
+        .sandbox-title {
+            color: #fff;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .sandbox-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            height: 400px;
+        }
+
+        .code-panel {
+            background: #0d1117;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+
+        .code-panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-line {
+            display: flex;
+            margin-bottom: 2px;
+        }
+
+        .line-number {
+            color: #666;
+            width: 30px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        .code-content {
+            color: #e6e6e6;
+        }
+
+        .keyword { color: #ff6b9d; }
+        .string { color: #c3e88d; }
+        .comment { color: #5c6370; }
+        .function { color: #82aaff; }
+        .number { color: #f78c6c; }
+
+        .center-panel {
+            background: #1a1a1a;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #333;
+        }
+
+        .processing-indicator {
+            color: #ff6b35;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .bug-visualization {
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .bug-pattern {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .bug-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff6b35;
+            opacity: 0.7;
+        }
+
+        .bug-dot.vulnerable {
+            background: #ff4757;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ffa726);
+            width: 0;
+            animation: progress 3s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        .output-panel {
+            background: #0a0a0a;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .output-line {
+            margin-bottom: 4px;
+            color: #4ade80;
+        }
+
+        .error-line {
+            color: #f87171;
+        }
+
+        .warning-line {
+            color: #fbbf24;
+        }
+
+        /* Stats Section */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 60px;
+            max-width: 800px;
+            margin: 0 auto 80px;
+            padding: 0 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-left {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .sandbox-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .code-panel {
+                border-right: none;
+                border-bottom: 1px solid #333;
+                height: 200px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .trusted-logos {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Banner -->
+    <div class="nav-banner">
+        RESEARCH STUDY: COMPREHENSIVE C/C++ PROGRAM REPAIR BENCHMARK RELEASED | LEARN MORE
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <div class="logo">⚡ Defects4C</div>
+            <a href="#benchmark">BENCHMARK</a>
+            <a href="#dataset">DATASET</a>
+            <a href="#research">RESEARCH</a>
+            <a href="#docs">DOCUMENTATION</a>
+            <a href="#download">DOWNLOAD</a>
+        </div>
+        <div class="nav-right">
+            <a href="#careers">CAREERS</a>
+            <div class="social-icons">
+                <a href="#">📧</a>
+                <a href="#">🐙</a>
+                <a href="#">💼</a>
+                <a href="#">🐦</a>
+            </div>
+            <a href="#" class="btn">SIGN UP</a>
+            <a href="#" class="btn btn-primary">ACCESS DATASET</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="badge">NEW</div>
+        <h1>EVALUATE <span class="highlight">C/C++ PROGRAM REPAIR</span><br>WITH COMPREHENSIVE BENCHMARKS</h1>
+        <p>Defects4C is an open-source benchmark for evaluating automated program repair techniques on C/C++ code. Features 9M bug-relevant commits, 248 verified bugs, and 102 vulnerabilities.</p>
+        
+        <div class="hero-buttons">
+            <a href="#" class="btn btn-primary btn-large">START RESEARCH</a>
+            <a href="#" class="btn btn-large">VIEW DOCUMENTATION</a>
+        </div>
+
+        <!-- Trusted By -->
+        <div class="trusted-by">
+            <h3>Trusted By</h3>
+            <div class="trusted-logos">
+                <span>SecurityLab</span>
+                <span>CodeAnalysis</span>
+                <span>BugHunters</span>
+                <span>RepairTech</span>
+                <span>VulnResearch</span>
+                <span>SafeCode</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sandbox Demo -->
+    <section class="sandbox-demo">
+        <div class="sandbox-container">
+            <div class="sandbox-header">
+                <div class="sandbox-controls">
+                    <div class="control-btn close"></div>
+                    <div class="control-btn minimize"></div>
+                    <div class="control-btn maximize"></div>
+                </div>
+                <div class="sandbox-title">DEFECTS4C BENCHMARK</div>
+            </div>
+            <div class="sandbox-content">
+                <!-- Code Panel -->
+                <div class="code-panel">
+                    <div class="panel-header">🐛 VULNERABLE CODE</div>
+                    <div class="code-line">
+                        <span class="line-number">1</span>
+                        <span class="code-content"><span class="keyword">void</span> <span class="function">vulnerable_func</span>() {</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="line-number">2</span>
+                        <span class="code-content">  <span class="keyword">char</span> buffer[<span class="number">10</span>];</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="line-number">3</span>
+                        <span class="code-content">  <span class="function">strcpy</span>(buffer, input);</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="line-number">4</span>
+                        <span class="code-content">  <span class="comment">// Buffer overflow risk</span></span>
+                    </div>
+                    <div class="code-line">
+                        <span class="line-number">5</span>
+                        <span class="code-content">  <span class="function">printf</span>(<span class="string">"%s"</span>, buffer);</span>
+                    </div>
+                    <div class="code-line">
+                        <span class="line-number">6</span>
+                        <span class="code-content">}</span>
+                    </div>
+                </div>
+
+                <!-- Center Panel -->
+                <div class="center-panel">
+                    <div class="processing-indicator">ANALYZING VULNERABILITIES...</div>
+                    <div class="bug-visualization">
+                        <div class="bug-pattern">
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot vulnerable"></div>
+                            <div class="bug-dot"></div>
+                            <div class="bug-dot"></div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="output-panel">
+                    <div class="panel-header">📊 ANALYSIS OUTPUT</div>
+                    <div class="output-line">DEFECTS4C v1.0</div>
+                    <div class="output-line">Analyzing C/C++ vulnerabilities...</div>
+                    <div class="warning-line">⚠ Buffer overflow detected</div>
+                    <div class="error-line">✗ CVE-2024-001: strcpy vulnerability</div>
+                    <div class="output-line">✓ Test case generation: PASSED</div>
+                    <div class="output-line">✓ Reproduction verified</div>
+                    <div class="output-line">📈 Benchmark ready for evaluation</div>
+                    <div class="output-line">🔧 LLM repair techniques available</div>
+                    <div class="output-line">─────────────────────</div>
+                    <div class="output-line">Status: READY FOR RESEARCH</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="stat-item">
+            <div class="stat-number">9M+</div>
+            <div class="stat-label">BUG-RELEVANT COMMITS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">248+</div>
+            <div class="stat-label">VERIFIED BUGS</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">102+</div>
+            <div class="stat-label">VULNERABILITY FUNCTIONS</div>
+        </div>
+    </section>
+
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate stats on scroll
+            const statNumbers = document.querySelectorAll('.stat-number');
+            
+            const observerOptions = {
+                threshold: 0.5,
+                rootMargin: '0px 0px -100px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+            
+            statNumbers.forEach(stat => {
+                stat.style.opacity = '0';
+                stat.style.transform = 'translateY(20px)';
+                stat.style.transition = 'all 0.6s ease';
+                observer.observe(stat);
+            });
+
+            // Add smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
