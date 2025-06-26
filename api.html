@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Helper & Patch Service API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fafafa;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .service-section {
+            background: #fff;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .service-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-description {
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .service-description code {
+            background: #f3f4f6;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .endpoint-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .endpoint-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-color: #3b82f6;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .endpoint-method {
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            min-width: 60px;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .endpoint-method-post {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .endpoint-method-get {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .endpoint-path {
+            font-family: 'Monaco', 'Menlo', monospace;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .endpoint-description {
+            color: #374151;
+            font-size: 15px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .endpoint-details {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .section {
+            background: #fff;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .endpoint {
+            display: flex;
+            min-height: 500px;
+        }
+
+        .section-left {
+            flex: 1.2;
+            padding: 32px;
+            border-right: 2px solid #e5e7eb;
+            min-width: 0;
+        }
+
+        .section-right {
+            flex: 1;
+            background: #f8fafc;
+            min-width: 0;
+        }
+
+        .section-right-inner {
+            padding: 32px;
+        }
+
+        .anchor-heading-wrapper {
+            margin-bottom: 32px;
+        }
+
+        .anchor-heading {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .endpoint-text {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .endpoint-summary {
+            margin-bottom: 32px;
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .param-section {
+            margin-bottom: 32px;
+        }
+
+        .param-section h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .param-table {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .param-row {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .param-row:last-child {
+            border-bottom: none;
+        }
+
+        .param-row:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .param-row-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .param-name {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 700;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .param-type {
+            color: #6b7280;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        .param-reqd {
+            background: #dc2626;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .param-optl {
+            background: #6b7280;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .param-desc {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .param-desc ul {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+
+        .param-desc li {
+            margin: 6px 0;
+        }
+
+        .param-desc code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .code-sample {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #d1d5db;
+        }
+
+        .code-sample-header {
+            background: #374151;
+            color: white;
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-button {
+            background: #4b5563;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .copy-button:hover {
+            background: #6b7280;
+            transform: translateY(-1px);
+        }
+
+        .code-sample-body {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .hljs-string {
+            color: #a7f3d0;
+        }
+
+        .hljs-number {
+            color: #fbbf24;
+        }
+
+        .hljs-literal {
+            color: #f87171;
+        }
+
+        .hljs-attr {
+            color: #60a5fa;
+        }
+
+        .language-selector {
+            background: #4b5563;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .error-codes {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .error-codes h5 {
+            color: #92400e;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .error-codes ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .error-codes li {
+            margin: 6px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .response-format {
+            background: #ecfdf5;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .response-format h5 {
+            color: #065f46;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .response-format ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .response-format li {
+            margin: 4px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: #059669;
+        }
+
+        @media (max-width: 768px) {
+            .endpoint {
+                flex-direction: column;
+            }
+            
+            .section-left {
+                border-right: none;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 24px;
+            }
+
+            .service-section {
+                padding: 24px;
+            }
+
+            .section-left,
+            .section-right-inner {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Bug Helper & Patch Service API</h1>
+            <p>Comprehensive API documentation for bug reproduction, patch creation, and testing workflows</p>
+        </div>
+
+        <!-- Service Overview -->
+        <div class="service-section">
+            <h2 class="service-title">
+                <span>🔧</span>
+                Bug Helper Service
+            </h2>
+            <p class="service-description">
+                Bug reproduction and fixing service providing REST APIs for managing complete software bug workflows.
+                <br><br>
+                <strong>Base URL:</strong> <code>http://localhost:8000</code> | <strong>Version:</strong> 1.0.0
+            </p>
+            <div class="endpoints-grid">
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method endpoint-method-get">GET</span>
+                        <span class="endpoint-path">/projects</span>
+                    </div>
+                    <div class="endpoint-description">Retrieve all available projects</div>
+                    <div class="endpoint-details">Returns list of project names for bug reproduction and fixing operations</div>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">/reproduce</span>
+                    </div>
+                    <div class="endpoint-description">Initiate bug reproduction</div>
+                    <div class="endpoint-details">Start bug reproduction process with environment setup and test execution</div>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">/fix</span>
+                    </div>
+                    <div class="endpoint-description">Apply patch and test fix</div>
+                    <div class="endpoint-details">Apply patch file and run tests with caching for performance</div>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">/fix2</span>
+                    </div>
+                    <div class="endpoint-description">Alternative fix implementation</div>
+                    <div class="endpoint-details">Alternative fix approach with different configuration options</div>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">/build_patch</span>
+                    </div>
+                    <div class="endpoint-description">Generate and apply patches</div>
+                    <div class="endpoint-details">Create patches from LLM responses with multiple strategies and intelligent extraction</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Get Projects -->
+        <div class="section">
+            <div class="anchor-heading-wrapper">
+                <h2 class="anchor-heading">Get Projects</h2>
+            </div>
+            <div class="endpoint">
+                <div class="section-left">
+                    <div class="endpoint-text">
+                        <span class="endpoint-method endpoint-method-get">GET</span>
+                        <span class="endpoint-path">http://localhost:8000/projects</span>
+                    </div>
+                    <div class="endpoint-summary">
+                        <p>Retrieve all available projects for bug reproduction and fixing. This endpoint provides the foundation for other operations by listing valid project names that can be used with the bug_id parameter.</p>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Parameters</h4>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-desc">
+                                    No parameters required. This endpoint accepts no input parameters and returns all available projects.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Returns</h4>
+                        <div class="response-format">
+                            <h5>Response Format</h5>
+                            <ul>
+                                <li><strong>Type:</strong> dict</li>
+                                <li><strong>Structure:</strong> {"projects": List[str]}</li>
+                            </ul>
+                        </div>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-desc">
+                                    Dictionary containing list of available project names for bug reproduction.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="error-codes">
+                        <h5>Error Codes</h5>
+                        <ul>
+                            <li>500 - Internal server error if projects cannot be loaded</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="section-right-inner">
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Example request</div>
+                                <select class="language-selector" onchange="switchLanguage(this, 'projects')">
+                                    <option value="curl">curl</option>
+                                    <option value="python">python</option>
+                                    <option value="javascript">javascript</option>
+                                </select>
+                            </div>
+                            <div class="code-sample-body">
+                                <div id="projects-curl" class="tab-content active">
+<pre><code>curl http://localhost:8000/projects</code></pre>
+                                </div>
+                                <div id="projects-python" class="tab-content">
+<pre><code>import requests
+
+response = requests.get("http://localhost:8000/projects")
+print(response.json())</code></pre>
+                                </div>
+                                <div id="projects-javascript" class="tab-content">
+<pre><code>const response = await fetch('http://localhost:8000/projects');
+const data = await response.json();
+console.log(data);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Response</div>
+                                <button class="copy-button" onclick="copyToClipboard('projects-response')">Copy</button>
+                            </div>
+                            <div class="code-sample-body" id="projects-response">
+<pre><code>{
+  <span class="hljs-attr">"projects"</span>: [
+    <span class="hljs-string">"libxml2"</span>,
+    <span class="hljs-string">"openssl"</span>,
+    <span class="hljs-string">"curl"</span>,
+    <span class="hljs-string">"nginx"</span>,
+    <span class="hljs-string">"apache"</span>
+  ]
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reproduce Bug -->
+        <div class="section">
+            <div class="anchor-heading-wrapper">
+                <h2 class="anchor-heading">Reproduce Bug</h2>
+            </div>
+            <div class="endpoint">
+                <div class="section-left">
+                    <div class="endpoint-text">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">http://localhost:8000/reproduce</span>
+                    </div>
+                    <div class="endpoint-summary">
+                        <p>Initiate bug reproduction for a specific bug ID. This endpoint queues a background task to reproduce the bug environment, set up dependencies, and run tests. The bug reproduction process includes environment setup, dependency installation, and test execution.</p>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Request body</h4>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">bug_id</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    Bug identifier in format "project@commit_sha". The project must be one of the available projects from <code>/projects</code> endpoint.
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">is_force_cleanup</div>
+                                    <div class="param-type">boolean</div>
+                                    <div class="param-optl">Optional</div>
+                                </div>
+                                <div class="param-desc">
+                                    Force cleanup before reproduction. When true, removes any existing build artifacts. Default: true
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Returns</h4>
+                        <div class="response-format">
+                            <h5>Response Format</h5>
+                            <ul>
+                                <li><strong>Type:</strong> dict</li>
+                                <li><strong>Structure:</strong> {"handle": str}</li>
+                            </ul>
+                        </div>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-desc">
+                                    Dictionary containing task handle for status tracking. Use this handle with <code>/status/{handle}</code> to monitor progress.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="error-codes">
+                        <h5>Error Codes</h5>
+                        <ul>
+                            <li>400 - Invalid bug_id format</li>
+                            <li>404 - Project not found</li>
+                            <li>500 - Reproduction fails to start</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="section-right-inner">
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Example request</div>
+                                <select class="language-selector" onchange="switchLanguage(this, 'reproduce')">
+                                    <option value="python">python</option>
+                                    <option value="curl">curl</option>
+                                    <option value="javascript">javascript</option>
+                                </select>
+                            </div>
+                            <div class="code-sample-body">
+                                <div id="reproduce-python" class="tab-content active">
+<pre><code>import requests
+
+response = requests.post(
+    "http://localhost:8000/reproduce",
+    json={
+        "bug_id": "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+        "is_force_cleanup": True
+    }
+)
+print(response.json())</code></pre>
+                                </div>
+                                <div id="reproduce-curl" class="tab-content">
+<pre><code>curl http://localhost:8000/reproduce \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bug_id": "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+    "is_force_cleanup": true
+  }'</code></pre>
+                                </div>
+                                <div id="reproduce-javascript" class="tab-content">
+<pre><code>const response = await fetch('http://localhost:8000/reproduce', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    bug_id: "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+    is_force_cleanup: true
+  })
+});
+const data = await response.json();
+console.log(data);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Response</div>
+                                <button class="copy-button" onclick="copyToClipboard('reproduce-response')">Copy</button>
+                            </div>
+                            <div class="code-sample-body" id="reproduce-response">
+<pre><code>{
+  <span class="hljs-attr">"handle"</span>: <span class="hljs-string">"abc123def456789012345678901234567890uvwx"</span>
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fix Bug -->
+        <div class="section">
+            <div class="anchor-heading-wrapper">
+                <h2 class="anchor-heading">Fix Bug</h2>
+            </div>
+            <div class="endpoint">
+                <div class="section-left">
+                    <div class="endpoint-text">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">http://localhost:8000/fix</span>
+                    </div>
+                    <div class="endpoint-summary">
+                        <p>Apply a patch to fix a bug and test the fix. This endpoint uses caching to avoid redundant processing of the same patch. Results are cached based on the combination of bug_id and patch_path, making subsequent requests with identical parameters return immediately.</p>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Request body</h4>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">bug_id</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    Bug identifier in format "project@commit_sha". Must match a valid project from <code>/projects</code>.
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">patch_path</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    File system path to the patch file. The patch file must exist and be readable.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Returns</h4>
+                        <div class="response-format">
+                            <h5>Response Format</h5>
+                            <ul>
+                                <li><strong>Type:</strong> dict</li>
+                                <li><strong>Structure:</strong> {"handle": str, "redis_key": str}</li>
+                            </ul>
+                        </div>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-desc">
+                                    Dictionary containing task handle and cache key for status tracking.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="error-codes">
+                        <h5>Error Codes</h5>
+                        <ul>
+                            <li>400 - Invalid bug_id format or patch_path doesn't exist</li>
+                            <li>500 - Patch application fails</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="section-right-inner">
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Example request</div>
+                                <select class="language-selector" onchange="switchLanguage(this, 'fix')">
+                                    <option value="python">python</option>
+                                    <option value="curl">curl</option>
+                                    <option value="javascript">javascript</option>
+                                </select>
+                            </div>
+                            <div class="code-sample-body">
+                                <div id="fix-python" class="tab-content active">
+<pre><code>import requests
+
+response = requests.post(
+    "http://localhost:8000/fix",
+    json={
+        "bug_id": "openssl@f1e2d3c4b5a6789012345678901234567890cdef",
+        "patch_path": "/patches/openssl_security_fix.patch"
+    }
+)
+print(response.json())</code></pre>
+                                </div>
+                                <div id="fix-curl" class="tab-content">
+<pre><code>curl http://localhost:8000/fix \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bug_id": "openssl@f1e2d3c4b5a6789012345678901234567890cdef",
+    "patch_path": "/patches/openssl_security_fix.patch"
+  }'</code></pre>
+                                </div>
+                                <div id="fix-javascript" class="tab-content">
+<pre><code>const response = await fetch('http://localhost:8000/fix', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    bug_id: "openssl@f1e2d3c4b5a6789012345678901234567890cdef",
+    patch_path: "/patches/openssl_security_fix.patch"
+  })
+});
+const data = await response.json();
+console.log(data);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Response</div>
+                                <button class="copy-button" onclick="copyToClipboard('fix-response')">Copy</button>
+                            </div>
+                            <div class="code-sample-body" id="fix-response">
+<pre><code>{
+  <span class="hljs-attr">"handle"</span>: <span class="hljs-string">"cGF0Y2hfZjFlMmQzYzRiNWE2XzEyMzQ1Njc4LmxvZw=="</span>,
+  <span class="hljs-attr">"redis_key"</span>: <span class="hljs-string">"patch_f1e2d3c4b5a6_12345678.log"</span>
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fix2 Bug -->
+        <div class="section">
+            <div class="anchor-heading-wrapper">
+                <h2 class="anchor-heading">Fix Bug (Alternative)</h2>
+            </div>
+            <div class="endpoint">
+                <div class="section-left">
+                    <div class="endpoint-text">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">http://localhost:8000/fix2</span>
+                    </div>
+                    <div class="endpoint-summary">
+                        <p>Alternative implementation for applying patches to fix bugs. This endpoint provides different configuration options and processing strategies compared to the standard /fix endpoint.</p>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Request body</h4>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">bug_id</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    Bug identifier in format "project@commit_sha". Must match a valid project from <code>/projects</code>.
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">patch_path</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    File system path to the patch file. The patch file must exist and be readable.
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">options</div>
+                                    <div class="param-type">object</div>
+                                    <div class="param-optl">Optional</div>
+                                </div>
+                                <div class="param-desc">
+                                    Additional configuration options for the alternative fix implementation.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Returns</h4>
+                        <div class="response-format">
+                            <h5>Response Format</h5>
+                            <ul>
+                                <li><strong>Type:</strong> dict</li>
+                                <li><strong>Structure:</strong> {"handle": str, "method": str}</li>
+                            </ul>
+                        </div>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-desc">
+                                    Dictionary containing task handle and processing method used.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="error-codes">
+                        <h5>Error Codes</h5>
+                        <ul>
+                            <li>400 - Invalid bug_id format or patch_path doesn't exist</li>
+                            <li>500 - Patch application fails</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="section-right-inner">
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Example request</div>
+                                <select class="language-selector" onchange="switchLanguage(this, 'fix2')">
+                                    <option value="python">python</option>
+                                    <option value="curl">curl</option>
+                                    <option value="javascript">javascript</option>
+                                </select>
+                            </div>
+                            <div class="code-sample-body">
+                                <div id="fix2-python" class="tab-content active">
+<pre><code>import requests
+
+response = requests.post(
+    "http://localhost:8000/fix2",
+    json={
+        "bug_id": "curl@b2c3d4e5f6a789012345678901234567890abcde",
+        "patch_path": "/patches/curl_memory_fix.patch",
+        "options": {
+            "validation": "strict",
+            "backup": True
+        }
+    }
+)
+print(response.json())</code></pre>
+                                </div>
+                                <div id="fix2-curl" class="tab-content">
+<pre><code>curl http://localhost:8000/fix2 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bug_id": "curl@b2c3d4e5f6a789012345678901234567890abcde",
+    "patch_path": "/patches/curl_memory_fix.patch",
+    "options": {
+      "validation": "strict",
+      "backup": true
+    }
+  }'</code></pre>
+                                </div>
+                                <div id="fix2-javascript" class="tab-content">
+<pre><code>const response = await fetch('http://localhost:8000/fix2', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    bug_id: "curl@b2c3d4e5f6a789012345678901234567890abcde",
+    patch_path: "/patches/curl_memory_fix.patch",
+    options: {
+      validation: "strict",
+      backup: true
+    }
+  })
+});
+const data = await response.json();
+console.log(data);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Response</div>
+                                <button class="copy-button" onclick="copyToClipboard('fix2-response')">Copy</button>
+                            </div>
+                            <div class="code-sample-body" id="fix2-response">
+<pre><code>{
+  <span class="hljs-attr">"handle"</span>: <span class="hljs-string">"ZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZnaGk="</span>,
+  <span class="hljs-attr">"method"</span>: <span class="hljs-string">"alternative_v2"</span>
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Patch -->
+        <div class="section">
+            <div class="anchor-heading-wrapper">
+                <h2 class="anchor-heading">Build Patch</h2>
+            </div>
+            <div class="endpoint">
+                <div class="section-left">
+                    <div class="endpoint-text">
+                        <span class="endpoint-method endpoint-method-post">POST</span>
+                        <span class="endpoint-path">http://localhost:8000/build_patch</span>
+                    </div>
+                    <div class="endpoint-summary">
+                        <p>Core endpoint for processing LLM responses and generating patches. Supports multiple patch application methods including direct replacement, unified diff application, and prefix-based patching. The service automatically detects the input format and selects appropriate processing strategies.</p>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Request body</h4>
+                        <div class="param-table">
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">bug_id</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    Bug identifier in format "project@commit_sha"
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">llm_response</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-reqd">Required</div>
+                                </div>
+                                <div class="param-desc">
+                                    LLM-generated patch content (inline code or unified diff). Can contain markdown code blocks or raw diff content.
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">method</div>
+                                    <div class="param-type">string</div>
+                                    <div class="param-optl">Optional</div>
+                                </div>
+                                <div class="param-desc">
+                                    Patch application method. Options:
+                                    <ul>
+                                        <li><code>diff</code> - Apply unified diff format patches</li>
+                                        <li><code>inline</code> - Extract code from markdown and apply directly</li>
+                                        <li><code>inline+meta</code> - Apply unified diff with metadata context</li>
+                                        <li><code>direct</code> - Direct replacement of function body</li>
+                                        <li><code>prefix</code> - Prefix-based replacement with context (default)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">generate_diff</div>
+                                    <div class="param-type">boolean</div>
+                                    <div class="param-optl">Optional</div>
+                                </div>
+                                <div class="param-desc">
+                                    Whether to generate git diff patch file. Default: true
+                                </div>
+                            </div>
+                            <div class="param-row">
+                                <div class="param-row-header">
+                                    <div class="param-name">persist_flag</div>
+                                    <div class="param-type">boolean</div>
+                                    <div class="param-optl">Optional</div>
+                                </div>
+                                <div class="param-desc">
+                                    Whether to save files persistently vs temporary files. Default: false
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-section">
+                        <h4>Returns</h4>
+                        <div class="response-format">
+                            <h5>Success Response</h5>
+                            <ul>
+                                <li><strong>success:</strong> boolean - Operation success status</li>
+                                <li><strong>md5_hash:</strong> string - MD5 hash of patch content</li>
+                                <li><strong>patch_content:</strong> string - Generated git diff content</li>
+                                <li><strong>fix_p:</strong> string - Path to generated fix file</li>
+                                <li><strong>fix_p_diff:</strong> string - Path to generated patch file</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="error-codes">
+                        <h5>Error Codes</h5>
+                        <ul>
+                            <li>err_extract_code_fail - Failed to extract code from markdown</li>
+                            <li>err_invalid_bug_id_format - Bug ID format is invalid</li>
+                            <li>err_bug_id_not_in_guidance - Bug ID not found in guidance database</li>
+                            <li>err_context_mismatch_byte_range - Patch context doesn't match source</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="section-right">
+                    <div class="section-right-inner">
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Example request</div>
+                                <select class="language-selector" onchange="switchLanguage(this, 'build')">
+                                    <option value="python">python</option>
+                                    <option value="curl">curl</option>
+                                    <option value="javascript">javascript</option>
+                                </select>
+                            </div>
+                            <div class="code-sample-body">
+                                <div id="build-python" class="tab-content active">
+<pre><code>import requests
+
+response = requests.post(
+    "http://localhost:8000/build_patch",
+    json={
+        "bug_id": "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+        "llm_response": "```cpp\nint validateInput(const char* input) {\n    if (!input || strlen(input) == 0) {\n        return 0;\n    }\n    return 1;\n}\n```",
+        "method": "direct",
+        "generate_diff": True,
+        "persist_flag": False
+    }
+)
+print(response.json())</code></pre>
+                                </div>
+                                <div id="build-curl" class="tab-content">
+<pre><code>curl http://localhost:8000/build_patch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bug_id": "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+    "llm_response": "```cpp\nint validateInput(const char* input) {\n    if (!input || strlen(input) == 0) {\n        return 0;\n    }\n    return 1;\n}\n```",
+    "method": "direct",
+    "generate_diff": true,
+    "persist_flag": false
+  }'</code></pre>
+                                </div>
+                                <div id="build-javascript" class="tab-content">
+<pre><code>const response = await fetch('http://localhost:8000/build_patch', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    bug_id: "libxml2@a1b2c3d4e5f6789012345678901234567890abcd",
+    llm_response: "```cpp\nint validateInput(const char* input) {\n    if (!input || strlen(input) == 0) {\n        return 0;\n    }\n    return 1;\n}\n```",
+    method: "direct",
+    generate_diff: true,
+    persist_flag: false
+  })
+});
+const data = await response.json();
+console.log(data);</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="code-sample">
+                            <div class="code-sample-header">
+                                <div>Success Response</div>
+                                <button class="copy-button" onclick="copyToClipboard('build-response')">Copy</button>
+                            </div>
+                            <div class="code-sample-body" id="build-response">
+<pre><code>{
+  <span class="hljs-attr">"success"</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">"md5_hash"</span>: <span class="hljs-string">"5d41402abc4b2a76b9719d911017c592"</span>,
+  <span class="hljs-attr">"patch_content"</span>: <span class="hljs-string">"diff --git a/src/validation.cpp..."</span>,
+  <span class="hljs-attr">"bug_id"</span>: <span class="hljs-string">"libxml2@a1b2c3d4e5f6789012345678901234567890abcd"</span>,
+  <span class="hljs-attr">"sha"</span>: <span class="hljs-string">"a1b2c3d4e5f6789012345678901234567890abcd"</span>,
+  <span class="hljs-attr">"fix_p"</span>: <span class="hljs-string">"/tmp/patches/tmp_xyz123.cpp"</span>,
+  <span class="hljs-attr">"fix_p_diff"</span>: <span class="hljs-string">"/tmp/patches/tmp_xyz123.patch"</span>,
+  <span class="hljs-attr">"func_start_byte"</span>: <span class="hljs-number">450</span>,
+  <span class="hljs-attr">"func_end_byte"</span>: <span class="hljs-number">485</span>
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchLanguage(selector, endpointName) {
+            const selectedLang = selector.value;
+            const containers = document.querySelectorAll(`[id^="${endpointName}-"]`);
+            
+            containers.forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            const activeContainer = document.getElementById(`${endpointName}-${selectedLang}`);
+            if (activeContainer) {
+                activeContainer.classList.add('active');
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const button = element.parentElement.querySelector('.copy-button');
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Add smooth scrolling for anchor links
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.endpoint-card');
+            cards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const method = this.querySelector('.endpoint-method').textContent.trim();
+                    const path = this.querySelector('.endpoint-path').textContent.trim();
+                    
+                    // Simple mapping for demonstration
+                    if (path === '/projects') {
+                        const projectsSection = document.querySelector('h2.anchor-heading');
+                        if (projectsSection && projectsSection.textContent.includes('Get Projects')) {
+                            projectsSection.scrollIntoView({behavior: 'smooth'});
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
