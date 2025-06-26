@@ -491,13 +491,11 @@
         <div class="nav-right">
             <a href="#careers">CAREERS</a>
             <div class="social-icons">
-                <a href="#">📧</a>
-                <a href="#">🐙</a>
-                <a href="#">💼</a>
+                <a href="https://github.com/defects4c/defects4c">GITHUB</a>
                 <a href="#">🐦</a>
             </div>
-            <a href="#" class="btn">SIGN UP</a>
-            <a href="#" class="btn btn-primary">ACCESS DATASET</a>
+            <a href="#" class="btn warnbtn">SIGN UP</a>
+            <a href="https://github.com/defects4c/defects4c" class="btn btn-primary">ACCESS DATASET</a>
         </div>
     </nav>
 
@@ -508,8 +506,8 @@
         <p>Defects4C is an open-source benchmark for evaluating automated program repair techniques on C/C++ code. Features 9M bug-relevant commits, 248 verified bugs, and 102 vulnerabilities.</p>
         
         <div class="hero-buttons">
-            <a href="#" class="btn btn-primary btn-large">START RESEARCH</a>
-            <a href="#" class="btn btn-large">VIEW DOCUMENTATION</a>
+            <a href="https://github.com/defects4c/defects4c" class="btn btn-primary btn-large">START RESEARCH</a>
+            <a href="/api.html" class="btn btn-large">VIEW DOCUMENTATION</a>
         </div>
 
         <!-- Trusted By -->
@@ -620,6 +618,11 @@
             </div>
         </div>
     </section>
+<!-- Add this div somewhere in your HTML for the message -->
+<div id="signupMessage" style="display: none; color: orange; margin-top: 10px;">
+    we will open the entry point after paper published.
+</div>
+
 
     <!-- Stats -->
     <section class="stats">
@@ -677,6 +680,25 @@
                 });
             });
         });
+
+ document.querySelectorAll('.warnbtn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Hide any previously shown messages
+            document.querySelectorAll('.signup-message').forEach(msg => {
+                msg.style.display = 'none';
+            });
+            
+            // Show the message
+            const message = document.getElementById('signupMessage');
+            message.style.display = 'block';
+            
+            // Optional: Position the message near the clicked button
+            message.style.marginTop = '10px';
+        });
+    });
+
     </script>
 </body>
 </html>
