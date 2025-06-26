@@ -390,9 +390,48 @@ let currentBugId = null; // Store current bug_id
 let currentHandle = null; // Store current task handle
 
 
-/* ------------ MONACO LOAD -------------- */
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
 require(['vs/editor/editor.main'], () => {
+   // Register custom diff language for git diff format
+   if (!monaco.languages.getLanguages().find(lang => lang.id === 'diff')) {
+       monaco.languages.register({ id: 'diff' });
+       
+       // Define syntax highlighting for diff format
+       monaco.languages.setMonarchTokensProvider('diff', {
+           tokenizer: {
+               root: [
+                   [/^diff --git.*$/, 'diff.header'],
+                   [/^index.*$/, 'diff.header'],
+                   [/^---.*$/, 'diff.header'],
+                   [/^\+\+\+.*$/, 'diff.header'],
+                   [/^@@.*@@.*$/, 'diff.range'],
+                   [/^\+.*$/, 'diff.inserted'],
+                   [/^-.*$/, 'diff.deleted'],
+                   [/^>>>.*<<<$/, 'diff.marker'],
+                   [/^ .*$/, 'diff.context'],
+                   [/^\\.*$/, 'diff.context']
+               ]
+           }
+       });
+       
+       // Define colors for diff highlighting
+       monaco.editor.defineTheme('diff-theme', {
+           base: 'vs-dark',
+           inherit: true,
+           rules: [
+               { token: 'diff.header', foreground: 'c5c5c5', fontStyle: 'bold' },
+               { token: 'diff.range', foreground: '569cd6', fontStyle: 'bold' },
+               { token: 'diff.inserted', foreground: '4ec9b0', background: '1e3a1e' },
+               { token: 'diff.deleted', foreground: 'f44747', background: '3a1e1e' },
+               { token: 'diff.marker', foreground: 'ffcc02', fontStyle: 'bold' },
+               { token: 'diff.context', foreground: 'd4d4d4' }
+           ],
+           colors: {
+               'editor.background': '#1e1e1e'
+           }
+       });
+   }
+
    // Create main code editor
    editor = monaco.editor.create(document.getElementById('editor'), {
        value: `# Loading initial problem...\n# Please wait while we fetch your first coding challenge`,
@@ -407,31 +446,35 @@ require(['vs/editor/editor.main'], () => {
    // Get the diff container element
    const diffContainer = document.getElementById('diffContainer');
    
-   // Create diff editor with inline view (uni-diff style)
-   diffEditor = monaco.editor.createDiffEditor(diffContainer, {
-       theme: 'vs-dark', 
-       automaticLayout: true, 
-       fontSize: 12, 
-       renderSideBySide: false, // Inline diff view
+   // Create diff editor as regular editor for git diff content
+   diffEditor = monaco.editor.create(diffContainer, {
+       value: '',
+       language: 'diff',
+       theme: 'diff-theme',
+       automaticLayout: true,
+       fontSize: 12,
        readOnly: true,
-       enableSplitViewResizing: false,
-       renderLineHighlight: 'none',
        minimap: {
            enabled: true
        },
        scrollBeyondLastLine: false,
        wordWrap: 'on',
-       diffCodeLens: true,
-       ignoreTrimWhitespace: false,
-       renderOverviewRuler: true
+       renderLineHighlight: 'none',
+       glyphMargin: false,
+       folding: false,
+       lineNumbers: 'on',
+       lineDecorationsWidth: 10,
+       lineNumbersMinChars: 3
    });
 
-   // Add resize observer for diff editor
+   // Add resize observer for both editors
    const resizeObserver = new ResizeObserver(() => {
        diffEditor.layout();
        editor.layout();
    });
    resizeObserver.observe(diffContainer);
+   resizeObserver.observe(document.getElementById('editor'));
+
 
    initializeApp();
 });
@@ -576,7 +619,7 @@ const updateExecutionOutput = (content) => {
    const applyNewCode = (original, fixed) => {
        currentCode = fixed;
        editor.setValue(fixed);
-       showDiff(original, fixed);
+       //showDiff(original, fixed);
    };
 
    const formatAsComments = (text) => {
@@ -1003,7 +1046,6 @@ function initializeSplitPanes() {
 
    /* ----------- UPDATED EXECUTE CODE FUNCTION ------------ */
 
-
 async function executeCode(code) {
     updateStatus('processing', 'Building patch...');
     const consoleOutput = document.getElementById('consoleOutput');
@@ -1045,7 +1087,10 @@ async function executeCode(code) {
             updateExecutionOutput(executionContent);
             
             if (isDebugging && debugBudgetRemaining > 0 && !errorMsg.includes('markdown extract fail')) {
-                startDebugIteration(code, errorMsg);
+                consoleOutput.textContent += `\n> Starting debug iteration (${debugBudgetRemaining} attempts remaining)...`;
+                setTimeout(() => {
+                    startDebugIteration(currentCode, errorMsg);
+                }, 1000);
             } else if (debugBudgetRemaining === 0) {
                 consoleOutput.textContent += '\n> Debug budget exhausted!';
                 updateStatus('error', 'Debug budget exhausted');
@@ -1055,6 +1100,19 @@ async function executeCode(code) {
                 stopDebugging();
             }
             return;
+        }
+        
+        // Update editor with patch content and show patch diff
+        if (patchResult.content) {
+            consoleOutput.textContent += '\n> Updating editor with patched content...';
+            editor.setValue(patchResult.content);
+            currentCode = patchResult.content;
+        }
+        
+        if (patchResult.patch_content) {
+            consoleOutput.textContent += '\n> Displaying patch diff...';
+            const diffContainer = document.getElementById('diffContainer');
+            diffContainer.innerHTML = `<pre style="margin: 0; padding: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; background: #1e1e1e; color: #d4d4d4;">${patchResult.patch_content}</pre>`;
         }
         
         const fixPath = patchResult.fix_p;
@@ -1098,7 +1156,10 @@ async function executeCode(code) {
         const startTime = Date.now();
         
         while ((Date.now() - startTime) < maxWaitTime * 1000) {
-            const statusResponse = await fetch(`${apiUrl}/status/${currentHandle}`);
+            // Use GET request for status check
+            const statusResponse = await fetch(`${apiUrl}/status/${currentHandle}`, {
+                method: 'GET'
+            });
             
             if (statusResponse.status !== 200) {
                 consoleOutput.textContent += '\n> Error checking status';
@@ -1110,19 +1171,36 @@ async function executeCode(code) {
             const statusData = await statusResponse.json();
             const currentStatus = statusData.status || 'unknown';
             
+            // Display fix_log in execution panel
+            if (statusData.fix_log) {
+                let executionContent = '=== EXECUTION LOG ===\n';
+                executionContent += statusData.fix_log;
+                updateExecutionOutput(executionContent);
+            }
+            
             if (currentStatus === 'completed') {
+                // FIXED: Better success detection logic
                 const fixStatus = statusData.fix_status || '';
+                const overallStatus = statusData.status || '';
                 
                 let executionContent = '=== TEST RESULTS ===\n';
-                executionContent += `Status: ${fixStatus}\n`;
+                executionContent += `Overall Status: ${overallStatus}\n`;
+                executionContent += `Fix Status: ${fixStatus}\n`;
                 
                 if (statusData.fix_log) {
                     executionContent += `\nExecution Log:\n${statusData.fix_log}`;
                 }
                 
-                consoleOutput.textContent += `\n> Tests completed: ${fixStatus}`;
+                consoleOutput.textContent += `\n> Tests completed - Overall: ${overallStatus}, Fix: ${fixStatus}`;
+                updateExecutionOutput(executionContent);
                 
-                if (fixStatus.toLowerCase().includes('success')) {
+                // FIXED: Check for success in multiple places
+                const isSuccess = (
+                    (fixStatus && fixStatus.toLowerCase().includes('success')) ||
+                    (overallStatus === 'completed' && !statusData.fix_log.includes('error:') && statusData.return_code === 0)
+                );
+                
+                if (isSuccess) {
                     executionContent += '\n\n✅ All tests passed!';
                     consoleOutput.textContent += '\n✅ All tests passed!';
                     
@@ -1133,28 +1211,65 @@ async function executeCode(code) {
                     updateExecutionOutput(executionContent);
                     updateStatus('ready', 'Tests passed!');
                     stopDebugging();
-                } else {
-                    updateExecutionOutput(executionContent);
-                    
-                    if (isDebugging && debugBudgetRemaining > 0) {
-                        const errorMsg = statusData.fix_log || 'Test failed';
-                        startDebugIteration(code, errorMsg);
-                    } else if (debugBudgetRemaining === 0) {
-                        consoleOutput.textContent += '\n> Debug budget exhausted!';
-                        updateStatus('error', 'Debug budget exhausted');
-                        stopDebugging();
-                    } else {
-                        updateStatus('error', 'Tests failed');
-                        stopDebugging();
-                    }
+                    return;
                 }
-                return;
+                
+                // FIXED: If not successful and we're debugging with budget remaining, continue
+                if (isDebugging && debugBudgetRemaining > 0) {
+                    const errorMsg = statusData.fix_log || `Test failed - Status: ${overallStatus}, Fix Status: ${fixStatus}`;
+                    consoleOutput.textContent += `\n> Test failed. Starting next debug iteration (${debugBudgetRemaining} attempts remaining)...`;
+                    consoleOutput.textContent += `\n> Error details: ${errorMsg.substring(0, 100)}...`;
+                    scrollConsoleToBottom();
+                    
+                    // FIXED: Continue debugging automatically
+                    setTimeout(() => {
+                        startDebugIteration(currentCode, errorMsg);
+                    }, 1000);
+                    return;
+                } else if (debugBudgetRemaining === 0) {
+                    consoleOutput.textContent += '\n> Debug budget exhausted!';
+                    updateStatus('error', 'Debug budget exhausted');
+                    stopDebugging();
+                    return;
+                } else {
+                    updateStatus('error', 'Tests failed');
+                    stopDebugging();
+                    return;
+                }
                 
             } else if (currentStatus === 'failed' || currentStatus === 'error') {
+                let executionContent = '=== EXECUTION ERROR ===\n';
+                if (statusData.fix_log) {
+                    executionContent += statusData.fix_log;
+                } else {
+                    executionContent += `Task failed with status: ${currentStatus}`;
+                }
+                updateExecutionOutput(executionContent);
+                
                 consoleOutput.textContent += `\n> Task failed with status: ${currentStatus}`;
-                updateStatus('error', 'Task failed');
-                stopDebugging();
-                return;
+                
+                // FIXED: If debugging and budget remaining, continue with the error
+                if (isDebugging && debugBudgetRemaining > 0) {
+                    const errorMsg = statusData.fix_log || `Task failed with status: ${currentStatus}`;
+                    consoleOutput.textContent += `\n> Build/test failed. Starting debug iteration (${debugBudgetRemaining} attempts remaining)...`;
+                    scrollConsoleToBottom();
+                    
+                    setTimeout(() => {
+                        startDebugIteration(currentCode, errorMsg);
+                    }, 1000);
+                    return;
+                } else {
+                    updateStatus('error', 'Task failed');
+                    stopDebugging();
+                    return;
+                }
+            } else {
+                // Show running status in execution panel
+                let executionContent = `=== RUNNING TESTS ===\nStatus: ${currentStatus}\n`;
+                if (statusData.fix_log) {
+                    executionContent += `\nCurrent Log:\n${statusData.fix_log}`;
+                }
+                updateExecutionOutput(executionContent);
             }
             
             // Wait before next poll
@@ -1181,6 +1296,10 @@ async function executeCode(code) {
 
 
 
+
+
+// Updated startDebugIteration function to continue debugging properly
+// Updated startDebugIteration function to continue debugging properly
 async function startDebugIteration(originalCode, errorMessage) {
     // Check budget before starting debug iteration
     if (debugBudgetRemaining <= 0) {
@@ -1298,16 +1417,16 @@ async function startDebugIteration(originalCode, errorMessage) {
         applyNewCode(originalCode, fixedCode);
         updateIterationsList();
         
-        // Continue debugging if we have budget
-        if (debugBudgetRemaining > 0) {
-            consoleOutput.textContent += `\n> Testing AI-fixed code... (${debugBudgetRemaining} attempts remaining)`;
+        // Continue debugging automatically if still in debug mode and have budget
+        if (isDebugging) {
+            consoleOutput.textContent += `\n> Testing AI-fixed code... (${debugBudgetRemaining} attempts remaining after this test)`;
             scrollConsoleToBottom();
-            executeCode(fixedCode);
+            // Use the newly fixed code for the next iteration
+            setTimeout(() => {
+                executeCode(fixedCode);
+            }, 1000);
         } else {
-            consoleOutput.textContent += '\n> Debug budget exhausted! This was the final attempt.';
-            scrollConsoleToBottom();
-            updateStatus('ready', 'Debug budget exhausted');
-            stopDebugging();
+            updateStatus('ready', 'AI fix applied');
         }
         
     } catch (error) {
@@ -1331,6 +1450,8 @@ async function startDebugIteration(originalCode, errorMessage) {
         stopDebugging();
     }
 }
+
+
 
 
 
@@ -1659,6 +1780,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
+
+
 
 
 
